@@ -39,10 +39,10 @@
 		public void SnapshotFile(string file)
 		{
 			string filename = Path.GetFileName(file);
-			long roomId = long.Parse(filename);
+			long subRoomId = long.Parse(filename);
 			long timestamp = File.GetLastWriteTimeUtc(file).Ticks;
 			byte[] data = File.ReadAllBytes(file);
-			store.InsertSnapshot(roomId, timestamp, data);
+			store.InsertSnapshot(subRoomId, timestamp, data);
 		}
 
 		//[PermissionSet(SecurityAction.Demand, Name="FullTrust")]

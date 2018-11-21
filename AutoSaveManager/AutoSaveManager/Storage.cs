@@ -16,16 +16,16 @@
 
 			string createSql = 
 				"CREATE TABLE IF NOT EXISTS autosaves(" +
-				"roomId INTEGER, " +
+				"subRoomId INTEGER, " +
 				"timestamp INTEGER, " +
 				"data BLOB, " +
-				"PRIMARY KEY(roomId ASC, timestamp DESC)) " +
+				"PRIMARY KEY(subRoomId ASC, timestamp DESC)) " +
 				"WITHOUT ROWID";
 
 			SQLiteCommand command = new SQLiteCommand(createSql, dbConnection);
 			command.ExecuteNonQuery();
 
-			createSql = "INSERT OR REPLACE INTO autosaves(roomId, timestamp, data) values (?, ?, ?)";
+			createSql = "INSERT OR REPLACE INTO autosaves(subRoomId, timestamp, data) values (?, ?, ?)";
 
 			insertCommand = new SQLiteCommand(createSql, dbConnection);
 		}
@@ -45,11 +45,11 @@
 			dbConnection = null;
 		}
 
-		public void InsertSnapshot(long roomId, long timestamp, byte[] blob)
+		public void InsertSnapshot(long subRoomId, long timestamp, byte[] blob)
 		{
 			if (dbConnection == null)
 				return;
-			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)roomId));
+			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
 			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)timestamp));
 			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Binary, (object)blob));
 			insertCommand.ExecuteNonQuery();
