@@ -36,13 +36,19 @@
 				SnapshotFile(file);
 		}
 
+		long lastSavedSubRoomId = -1;
+		byte[] lastSavedData;
 		public void SnapshotFile(string file)
 		{
 			string filename = Path.GetFileName(file);
 			long subRoomId = long.Parse(filename);
 			long timestamp = File.GetLastWriteTimeUtc(file).Ticks;
 			byte[] data = File.ReadAllBytes(file);
-			store.InsertSnapshot(subRoomId, timestamp, data);
+			if (subRoomId == lastSavedSubRoomId && (object.ReferenceEquals(data, lastSavedData) || data == lastSavedData))
+				return;
+			lastSavedSubRoomId = subRoomId;
+			lastSavedData = data;
+			store.StoreSnapshot(subRoomId, timestamp, data);
 		}
 
 		//[PermissionSet(SecurityAction.Demand, Name="FullTrust")]
