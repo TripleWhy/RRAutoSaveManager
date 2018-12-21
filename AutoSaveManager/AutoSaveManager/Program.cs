@@ -1,16 +1,23 @@
 ﻿namespace AutoSaveManager
 {
-	using System;
+	using Qml.Net;
 
 	class Program
 	{
-		private static void Main(string[] args)
+		private static int Main(string[] args)
 		{
-			using (AutoSaveManager asm = new AutoSaveManager())
+			//System.Environment.SetEnvironmentVariable("QT_QUICK_CONTROLS_CONF", System.IO.Directory.GetCurrentDirectory() + "/qml/qtquickcontrols2.conf");
+			System.Console.WriteLine(System.Environment.GetEnvironmentVariable("QT_QUICK_CONTROLS_CONF"));
+			using (var app = new QGuiApplication(args))
 			{
-				asm.StartWatching();
-				Console.WriteLine("Press \'q\' to quit.");
-				while(Console.Read()!='q');
+				using (var engine = new QQmlApplicationEngine())
+				{
+					// Register our new type to be used in Qml
+					QmlBridge.RegisterTypes();
+					Qml.RegisterType<QmlBridge>("asm", 0, 1);
+					engine.Load("qml/main.qml");
+					return app.Exec();
+				}
 			}
 		}
 	}
