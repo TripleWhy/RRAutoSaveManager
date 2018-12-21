@@ -13,6 +13,9 @@
 		private SQLiteCommand selectTimestamps;
 		private SQLiteCommand selectSpecivicBlobCommand;
 		private SQLiteCommand selectRoomsCommand;
+		private SQLiteCommand selectRoomsAndNamesCommand;
+
+		private readonly SQLiteCommand[] commands;
 
 		public Storage(string dbFile)
 		{
@@ -25,6 +28,10 @@
 				"timestamp INTEGER, " +
 				"data BLOB, " +
 				"PRIMARY KEY(subRoomId ASC, timestamp DESC)) " +
+				"WITHOUT ROWID;" +
+				"CREATE TABLE IF NOT EXISTS roomNames(" +
+				"subRoomId INTEGER PRIMARY KEY, " +
+				"name TEXT) " +
 				"WITHOUT ROWID;";
 
 			SQLiteCommand command = new SQLiteCommand(createSql, dbConnection);
@@ -35,6 +42,9 @@
 			selectTimestamps = new SQLiteCommand("SELECT timestamp FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC;", dbConnection);
 			selectSpecivicBlobCommand = new SQLiteCommand("SELECT data FROM autosaves WHERE subRoomId = ? AND timestamp = ?;", dbConnection);
 			selectRoomsCommand = new SQLiteCommand("SELECT DISTINCT subRoomId FROM autosaves;", dbConnection);
+			selectRoomsAndNamesCommand = new SQLiteCommand("SELECT subRoomId, name FROM (SELECT DISTINCT subRoomId FROM autosaves) as sids LEFT OUTER JOIN roomNames USING(subRoomId);", dbConnection);
+
+			commands = new SQLiteCommand[]{ insertCommand, selectTimestamps, selectSpecivicBlobCommand, selectRoomsCommand, selectRoomsAndNamesCommand };
 		}
 		
 		~Storage()
@@ -46,34 +56,27 @@
 		{
 			if (dbConnection == null)
 				return;
-			insertCommand.Dispose();
-			insertCommand = null;
-			//selectLatestCommand.Dispose();
-			//selectLatestCommand = null;
-			selectTimestamps.Dispose();
-			selectTimestamps = null;
-			selectSpecivicBlobCommand.Dispose();
-			selectSpecivicBlobCommand = null;
-			selectRoomsCommand.Dispose();
-			selectRoomsCommand = null;
+			foreach (SQLiteCommand command in commands)
+				command.Dispose();
 			dbConnection.Dispose();
 			dbConnection = null;
 		}
 
-		public void StoreSnapshot(long subRoomId, long timestamp, byte[] blob)
+		public void StoreSnapshot(long subRoomId, DateTime timestamp, byte[] blob)
 		{
 			insertCommand.Parameters.Clear();
 			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
-			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)timestamp));
+			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)timestamp.Ticks));
 			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Binary, (object)blob));
 			insertCommand.ExecuteNonQuery();
+			SnapshotStored(this, new StoreEventArgs { subRoomId = subRoomId, timestamp = timestamp });
 		}
 
-		public byte[] FetchSnapshot(long subRoomId, long timestamp)
+		public byte[] FetchSnapshot(long subRoomId, DateTime timestamp)
 		{
 			selectSpecivicBlobCommand.Parameters.Clear();
 			selectSpecivicBlobCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
-			selectSpecivicBlobCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)timestamp));
+			selectSpecivicBlobCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)timestamp.Ticks));
 			byte[] data = null;
 			using (SQLiteDataReader reader = selectSpecivicBlobCommand.ExecuteReader())
 			{
@@ -83,14 +86,14 @@
 			return data;
 		}
 
-		public IEnumerable<long> FetchTimestamps(long subRoomId)
+		public IEnumerable<DateTime> FetchTimestamps(long subRoomId)
 		{
 			selectTimestamps.Parameters.Clear();
 			selectTimestamps.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
 			using (SQLiteDataReader reader = selectTimestamps.ExecuteReader())
 			{
 				while (reader.Read())
-					yield return reader.GetInt64(0);
+					yield return new DateTime(reader.GetInt64(0));
 			}
 		}
 
@@ -102,5 +105,28 @@
 					yield return reader.GetInt64(0);
 			}
 		}
+
+		public class RoomAndName
+		{
+			public long subRoomId;
+			public string subRoomName;
+		}
+
+		public IEnumerable<RoomAndName> FetchSubRoomIdsWithNames()
+		{
+			using (SQLiteDataReader reader = selectRoomsAndNamesCommand.ExecuteReader())
+			{
+				while (reader.Read())
+					yield return new RoomAndName { subRoomId = reader.GetInt64(0), subRoomName = reader[1] as string };
+			}
+		}
+
+		public class StoreEventArgs : EventArgs
+		{
+			public long subRoomId;
+			public DateTime timestamp;
+		}
+		public delegate void StoreEventHandler(object sender, StoreEventArgs a);
+		public event EventHandler<StoreEventArgs> SnapshotStored = delegate{ };
 	}
 }

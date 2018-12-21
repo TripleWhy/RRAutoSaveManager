@@ -5,24 +5,24 @@
 
 	class AutoSaveManager : IDisposable
 	{
-		private string dataDir = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RRAutoSaveManager"));
-		private string dbFile;
-		private string autosaveDir = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "../LocalLow/Against Gravity/Rec Room/Autosaves"));
+		private readonly string dataDir = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RRAutoSaveManager"));
+		private readonly string dbFile;
+		private readonly string autosaveDir = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "../LocalLow/Against Gravity/Rec Room/Autosaves"));
 
-		private Storage store;
+		public Storage Store { get; }
 		private FileSystemWatcher watcher;
 
 		public AutoSaveManager()
 		{
 			Directory.CreateDirectory(dataDir);
 			dbFile = Path.Combine(dataDir, "db.dat");
-			store = new Storage(dbFile);
+			Store = new Storage(dbFile);
 		}
 
 		public void Dispose()
 		{
 			watcher?.Dispose();
-			store.Dispose();
+			Store.Dispose();
 		}
 
 		public void StartWatching()
@@ -45,13 +45,13 @@
 		{
 			string filename = Path.GetFileName(file);
 			long subRoomId = long.Parse(filename);
-			long timestamp = File.GetLastWriteTimeUtc(file).Ticks;
+			DateTime timestamp = File.GetLastWriteTimeUtc(file);
 			byte[] data = File.ReadAllBytes(file);
 			if (subRoomId == lastSavedSubRoomId && (object.ReferenceEquals(data, lastSavedData) || data == lastSavedData))
 				return;
 			lastSavedSubRoomId = subRoomId;
 			lastSavedData = data;
-			store.StoreSnapshot(subRoomId, timestamp, data);
+			Store.StoreSnapshot(subRoomId, timestamp, data);
 		}
 
 		//[PermissionSet(SecurityAction.Demand, Name="FullTrust")]
