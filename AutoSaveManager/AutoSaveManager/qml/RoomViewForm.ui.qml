@@ -6,14 +6,6 @@ Item {
     id: roomView
     property alias subRoomIdLabel: subRoomIdLabel
     property alias subRoomLabelField: subRoomLabelField
-    anchors.leftMargin: 0
-    anchors.right: parent.right
-    anchors.rightMargin: 0
-    anchors.left: roomScroll.right
-    anchors.bottom: parent.bottom
-    anchors.bottomMargin: 0
-    anchors.top: parent.top
-    anchors.topMargin: 0
 
     RowLayout {
         Label {
