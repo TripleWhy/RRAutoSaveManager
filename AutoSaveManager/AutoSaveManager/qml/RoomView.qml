@@ -4,6 +4,7 @@ import asm 0.1
 RoomViewForm {
 	property SubRoomData subRoomData
 
-	subRoomIdLabel.text: subRoomData.subRoomId
-	subRoomLabelField.text: subRoomData.subRoomName
+	visible: subRoomData != null
+	subRoomIdLabel.text: subRoomData == null ? null : subRoomData.subRoomId
+	subRoomLabelField.text: subRoomData == null ? null : subRoomData.subRoomName
 }

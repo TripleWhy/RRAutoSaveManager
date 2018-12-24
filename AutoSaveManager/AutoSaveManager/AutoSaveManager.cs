@@ -35,6 +35,7 @@
 
 		private void SnapshotAllFiles(string path)
 		{
+			Directory.CreateDirectory(path);
 			foreach (string file in Directory.EnumerateFileSystemEntries(path))
 				SnapshotFile(file);
 		}

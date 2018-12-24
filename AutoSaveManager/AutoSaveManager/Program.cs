@@ -6,8 +6,7 @@
 	{
 		private static int Main(string[] args)
 		{
-			//System.Environment.SetEnvironmentVariable("QT_QUICK_CONTROLS_CONF", System.IO.Directory.GetCurrentDirectory() + "/qml/qtquickcontrols2.conf");
-			System.Console.WriteLine(System.Environment.GetEnvironmentVariable("QT_QUICK_CONTROLS_CONF"));
+			Qt.PutEnv("QT_QUICK_CONTROLS_CONF", System.IO.Directory.GetCurrentDirectory() + "/qml/qtquickcontrols2.conf");
 			using (var app = new QGuiApplication(args))
 			{
 				using (var engine = new QQmlApplicationEngine())

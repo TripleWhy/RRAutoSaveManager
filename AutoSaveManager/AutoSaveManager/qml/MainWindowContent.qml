@@ -1,5 +1,5 @@
 import QtQuick 2.4
-import asm 0.1;
+import asm 0.1
 
 MainWindowContentForm {
 	id: mwcf
@@ -26,8 +26,10 @@ MainWindowContentForm {
 	}
 
 	function onSelectedRoomChanged() {
-		if (roomListView == null)
+		if (roomListView == null) {
+			currentSubRoom = null
 			return
+		}
 		currentSubRoom = roomListView.currentItem.myData.modelData
 		console.log("onSelectedRoomChanged", currentSubRoom)
 	}
