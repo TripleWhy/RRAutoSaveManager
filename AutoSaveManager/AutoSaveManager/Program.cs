@@ -14,7 +14,6 @@
 				{
 					// Register our new type to be used in Qml
 					QmlBridge.RegisterTypes();
-					Qml.RegisterType<QmlBridge>("asm", 0, 1);
 					engine.Load("qml/main.qml");
 					return app.Exec();
 				}
