@@ -84,17 +84,18 @@
 					LoadSavePoints(e.subRoomId);
 					Debug.Assert(data.savePoints != null);
 					Debug.Assert(data.savePoints.Count > 0);
-					Debug.Assert(data.savePoints[data.savePoints.Count] == e.timestamp);
+					Debug.Assert(data.savePoints[data.savePoints.Count - 1] == e.timestamp);
 				}
 				else
 				{
-					Debug.Assert(data.savePoints.Count == 0 || data.savePoints[data.savePoints.Count] != e.timestamp);
+					Debug.Assert(data.savePoints.Count == 0 || data.savePoints[data.savePoints.Count - 1] != e.timestamp);
 					data.savePoints.Add(e.timestamp);
 				}
 			}
 			else
 			{
 				data = new SubRoomData { SubRoomId = (int)e.subRoomId, savePoints = new List<DateTime> { e.timestamp } };
+				RoomData.Add(e.subRoomId, data);
 			}
 		}
 
