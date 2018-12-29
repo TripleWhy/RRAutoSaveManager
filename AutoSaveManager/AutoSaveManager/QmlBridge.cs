@@ -66,13 +66,14 @@
 				RoomData.Add(ram.subRoomId, new SubRoomData { SubRoomId = (int)ram.subRoomId, SubRoomName = ram.subRoomName });
 			asm.Store.SnapshotStored += Store_SnapshotStored;
 
-			RaiseRoomDataChanged();
+			RaiseSubRoomAdded(-1);
 		}
 
 		private void LoadSavePoints(long subRoomId)
 		{
 			Debug.Assert(RoomData.ContainsKey(subRoomId));
 			RoomData[subRoomId].savePoints = new List<DateTime>(asm.Store.FetchTimestamps(subRoomId));
+			RaiseSavePointAdded(subRoomId, null);
 		}
 
 		private void Store_SnapshotStored(object sender, Storage.StoreEventArgs e)
@@ -90,18 +91,25 @@
 				{
 					Debug.Assert(data.savePoints.Count == 0 || data.savePoints[data.savePoints.Count - 1] != e.timestamp);
 					data.savePoints.Add(e.timestamp);
+					RaiseSavePointAdded(e.subRoomId, e.timestamp);
 				}
 			}
 			else
 			{
 				data = new SubRoomData { SubRoomId = (int)e.subRoomId, savePoints = new List<DateTime> { e.timestamp } };
 				RoomData.Add(e.subRoomId, data);
+				RaiseSubRoomAdded(e.subRoomId);
 			}
 		}
 
-		private void RaiseRoomDataChanged()
+		private void RaiseSubRoomAdded(long subRoomId)
 		{
-			this.ActivateSignal("roomDataChanged");
+			this.ActivateSignal("subRoomAdded", (int)subRoomId); //TODO make long
+		}
+
+		private void RaiseSavePointAdded(long subRoomId, DateTime? savePoint)
+		{
+			this.ActivateSignal("savePointAdded", (int)subRoomId, savePoint); //TODO make long
 		}
 	}
 }
