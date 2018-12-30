@@ -12,7 +12,7 @@ MainWindowContentForm {
 	}
 
 	onBridgeChanged: {
-		bridge.subRoomAdded.connect(updateModel);
+		bridge.roomDataChanged.connect(updateModel);
 		updateModel();
 	}
 

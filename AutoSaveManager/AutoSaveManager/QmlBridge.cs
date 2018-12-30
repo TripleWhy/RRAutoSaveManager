@@ -5,6 +5,8 @@
 	using System.Collections.Generic;
 	using System.Diagnostics;
 
+	[Signal("subRoomAdded", NetVariantType.Int)]
+	[Signal("savePointAdded", NetVariantType.Int, NetVariantType.DateTime)]
 	class QmlBridge : IDisposable
 	{
 		public class SubRoomData
@@ -105,6 +107,7 @@
 		private void RaiseSubRoomAdded(long subRoomId)
 		{
 			this.ActivateSignal("subRoomAdded", (int)subRoomId); //TODO make long
+			this.ActivateSignal("roomDataChanged");
 		}
 
 		private void RaiseSavePointAdded(long subRoomId, DateTime? savePoint)
