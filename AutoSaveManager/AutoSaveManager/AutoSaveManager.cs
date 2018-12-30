@@ -1,6 +1,7 @@
 ﻿namespace AutoSaveManager
 {
 	using System;
+	using System.Collections;
 	using System.IO;
 
 	class AutoSaveManager : IDisposable
@@ -40,6 +41,13 @@
 				SnapshotFile(file);
 		}
 
+		static public bool DataEquals(byte[] a1, byte[] b1)
+		{
+			return ((a1 == null) == (b1 == null))
+				&& (object.ReferenceEquals(a1, b1)
+					|| ((IStructuralEquatable)a1).Equals(b1, StructuralComparisons.StructuralEqualityComparer));
+		}
+
 		long lastSavedSubRoomId = -1;
 		byte[] lastSavedData;
 		public void SnapshotFile(string file)
@@ -48,9 +56,13 @@
 			long subRoomId = long.Parse(filename);
 			DateTime timestamp = File.GetLastWriteTimeUtc(file);
 			byte[] data = File.ReadAllBytes(file);
-			if (subRoomId == lastSavedSubRoomId && (object.ReferenceEquals(data, lastSavedData) || data == lastSavedData))
-				return;
+
+			if (subRoomId != lastSavedSubRoomId)
+				lastSavedData = Store.FetchLatestSnapshot(subRoomId, out DateTime storedTimestamp);
 			lastSavedSubRoomId = subRoomId;
+
+			if (DataEquals(data, lastSavedData))
+				return;
 			lastSavedData = data;
 			Store.StoreSnapshot(subRoomId, timestamp, data);
 		}

@@ -9,7 +9,7 @@
 	{
 		private SQLiteConnection dbConnection;
 		private SQLiteCommand insertCommand;
-		//private SQLiteCommand selectLatestCommand;
+		private SQLiteCommand selectLatestCommand;
 		private SQLiteCommand selectTimestamps;
 		private SQLiteCommand selectSpecivicBlobCommand;
 		private SQLiteCommand selectRoomsCommand;
@@ -38,13 +38,13 @@
 			command.ExecuteNonQuery();
 
 			insertCommand = new SQLiteCommand("INSERT OR REPLACE INTO autosaves(subRoomId, timestamp, data) values (?, ?, ?);", dbConnection);
-			//selectLatestCommand = new SQLiteCommand("SELECT timestamp, data FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC LIMIT 1;", dbConnection);
+			selectLatestCommand = new SQLiteCommand("SELECT timestamp, data FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC LIMIT 1;", dbConnection);
 			selectTimestamps = new SQLiteCommand("SELECT timestamp FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC;", dbConnection);
 			selectSpecivicBlobCommand = new SQLiteCommand("SELECT data FROM autosaves WHERE subRoomId = ? AND timestamp = ?;", dbConnection);
 			selectRoomsCommand = new SQLiteCommand("SELECT DISTINCT subRoomId FROM autosaves;", dbConnection);
 			selectRoomsAndNamesCommand = new SQLiteCommand("SELECT subRoomId, name FROM (SELECT DISTINCT subRoomId FROM autosaves) as sids LEFT OUTER JOIN roomNames USING(subRoomId);", dbConnection);
 
-			commands = new SQLiteCommand[]{ insertCommand, selectTimestamps, selectSpecivicBlobCommand, selectRoomsCommand, selectRoomsAndNamesCommand };
+			commands = new SQLiteCommand[]{ insertCommand, selectLatestCommand, selectTimestamps, selectSpecivicBlobCommand, selectRoomsCommand, selectRoomsAndNamesCommand };
 		}
 		
 		~Storage()
@@ -72,18 +72,33 @@
 			SnapshotStored(this, new StoreEventArgs { subRoomId = subRoomId, timestamp = timestamp });
 		}
 
+		public byte[] FetchLatestSnapshot(long subRoomId, out DateTime timestamp)
+		{
+			selectLatestCommand.Parameters.Clear();
+			selectLatestCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
+			using (SQLiteDataReader reader = selectLatestCommand.ExecuteReader())
+			{
+				if (reader.Read())
+				{
+					timestamp = new DateTime(reader.GetInt64(0));
+					return (byte[])reader[1];
+				}
+			}
+			timestamp = new DateTime();
+			return null;
+		}
+
 		public byte[] FetchSnapshot(long subRoomId, DateTime timestamp)
 		{
 			selectSpecivicBlobCommand.Parameters.Clear();
 			selectSpecivicBlobCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
 			selectSpecivicBlobCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)timestamp.Ticks));
-			byte[] data = null;
 			using (SQLiteDataReader reader = selectSpecivicBlobCommand.ExecuteReader())
 			{
 				if (reader.Read())
-					data = (byte[])reader[0];
+					return (byte[])reader[0];
 			}
-			return data;
+			return null;
 		}
 
 		public IEnumerable<DateTime> FetchTimestamps(long subRoomId)
