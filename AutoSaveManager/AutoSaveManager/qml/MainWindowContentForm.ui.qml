@@ -26,6 +26,12 @@ Item {
                 onClicked: roomListView.currentIndex = index
             }
         }
+
+        Item {
+            //TODO: since the update to qml.net 0.7.0 (and Qt 5.12) roomListView is not visible somehow without an item here.
+            id: rectangle
+            visible: false
+        }
     }
 
     RoomView {
@@ -40,3 +46,11 @@ Item {
         anchors.topMargin: 0
     }
 }
+
+
+
+
+/*##^## Designer {
+    D{i:2;anchors_width:400;invisible:true}
+}
+ ##^##*/

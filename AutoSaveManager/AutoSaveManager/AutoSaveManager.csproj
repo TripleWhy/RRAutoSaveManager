@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Qml.Net" Version="0.6.2" />
-    <PackageReference Include="Qml.Net.WindowsBinaries" Version="0.6.2" />
+    <PackageReference Include="Qml.Net" Version="0.7.0" />
+    <PackageReference Include="Qml.Net.WindowsBinaries" Version="0.7.0" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.109.2" />
   </ItemGroup>
 
