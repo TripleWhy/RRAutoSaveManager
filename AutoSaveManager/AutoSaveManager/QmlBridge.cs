@@ -11,26 +11,49 @@
 	{
 		public class SubRoomData
 		{
+			public class SavePoint
+			{
+				public DateTime Timestamp { get; set; }
+				public string DisplayString { get; set; }
+				public string Comment { get; set; }
+
+				public SavePoint(DateTime timestamp, String comment)
+				{
+					Timestamp = timestamp;
+					DisplayString = SavePointDisplayString(timestamp);
+					Comment = comment;
+				}
+			}
+
 			public int SubRoomId { get; set; } //TODO change to long when qml.net supports that
 			public string SubRoomName { get; set; }
-			public List<DateTime> savePoints = null;
+			public DateTime TestDt { get; set; }
+			
+			public delegate void LoadSavePointsCallback(long subRoomId);
+			public LoadSavePointsCallback LoadSavePoints;
+
+			private List<SavePoint> _savePoints;
+			public bool IsSavePointsInitialized { get => _savePoints != null; }
+			public List<SavePoint> SavePoints
+			{
+				get
+				{
+					if (_savePoints == null && LoadSavePoints != null)
+					{
+						LoadSavePoints(SubRoomId);
+						Debug.Assert(_savePoints != null);
+					}
+					return _savePoints;
+				}
+				set => _savePoints = value;
+			}
 		}
 
 		private AutoSaveManager asm;
 
 		[NotifySignal]
 		public SortedDictionary<long, SubRoomData> RoomData { get; }
-		//public List<SubRoomData> RoomDataList { get => new List<SubRoomData>(RoomData.Values); }
-		public List<SubRoomData> RoomDataList
-		{
-			get
-			{
-				var list = new List<SubRoomData>(RoomData.Values);
-				Console.WriteLine(list.Count);
-				Console.WriteLine(list);
-				return list;
-			}
-		}
+		public List<SubRoomData> RoomDataList { get => new List<SubRoomData>(RoomData.Values); }
 
 		public QmlBridge()
 		{
@@ -65,7 +88,7 @@
 
 			RoomData.Clear();
 			foreach (Storage.RoomAndName ram in asm.Store.FetchSubRoomIdsWithNames())
-				RoomData.Add(ram.subRoomId, new SubRoomData { SubRoomId = (int)ram.subRoomId, SubRoomName = ram.subRoomName });
+				RoomData.Add(ram.subRoomId, new SubRoomData { SubRoomId = (int)ram.subRoomId, SubRoomName = ram.subRoomName, LoadSavePoints = LoadSavePoints });
 			asm.Store.SnapshotStored += Store_SnapshotStored;
 
 			RaiseSubRoomAdded(-1);
@@ -74,31 +97,38 @@
 		private void LoadSavePoints(long subRoomId)
 		{
 			Debug.Assert(RoomData.ContainsKey(subRoomId));
-			RoomData[subRoomId].savePoints = new List<DateTime>(asm.Store.FetchTimestamps(subRoomId));
+			List<SubRoomData.SavePoint> savePoints = new List<SubRoomData.SavePoint>();
+			foreach (Storage.SavePointData spd in asm.Store.FetchTimestamps(subRoomId))
+				savePoints.Add(new SubRoomData.SavePoint(spd.timestamp, spd.comment));
+			RoomData[subRoomId].SavePoints = savePoints;
 			RaiseSavePointAdded(subRoomId, null);
+		}
+
+		public static string SavePointDisplayString(DateTime dt)
+		{
+			return dt.ToString();
 		}
 
 		private void Store_SnapshotStored(object sender, Storage.StoreEventArgs e)
 		{
 			if (RoomData.TryGetValue(e.subRoomId, out SubRoomData data))
 			{
-				if (data.savePoints == null)
+				if (!data.IsSavePointsInitialized)
 				{
-					LoadSavePoints(e.subRoomId);
-					Debug.Assert(data.savePoints != null);
-					Debug.Assert(data.savePoints.Count > 0);
-					Debug.Assert(data.savePoints[data.savePoints.Count - 1] == e.timestamp);
+					Debug.Assert(data.SavePoints != null);
+					Debug.Assert(data.SavePoints.Count > 0);
+					Debug.Assert(data.SavePoints[data.SavePoints.Count - 1].Timestamp == e.timestamp);
 				}
 				else
 				{
-					Debug.Assert(data.savePoints.Count == 0 || data.savePoints[data.savePoints.Count - 1] != e.timestamp);
-					data.savePoints.Add(e.timestamp);
+					Debug.Assert(data.SavePoints.Count == 0 || data.SavePoints[data.SavePoints.Count - 1].Timestamp != e.timestamp);
+					data.SavePoints.Add(new SubRoomData.SavePoint(e.timestamp, e.comment));
 					RaiseSavePointAdded(e.subRoomId, e.timestamp);
 				}
 			}
 			else
 			{
-				data = new SubRoomData { SubRoomId = (int)e.subRoomId, savePoints = new List<DateTime> { e.timestamp } };
+				data = new SubRoomData { SubRoomId = (int)e.subRoomId, SavePoints = new List<SubRoomData.SavePoint> { new SubRoomData.SavePoint(e.timestamp, e.comment) } };
 				RoomData.Add(e.subRoomId, data);
 				RaiseSubRoomAdded(e.subRoomId);
 			}

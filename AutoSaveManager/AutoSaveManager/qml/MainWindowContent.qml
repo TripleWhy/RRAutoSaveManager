@@ -7,7 +7,6 @@ MainWindowContentForm {
 	property SubRoomData currentSubRoom
 
 	Component.onCompleted: {
-		console.log("MainWindowContentForm.onCompleted");
 		roomListView.currentItemChanged.connect(onSelectedRoomChanged);
 	}
 
@@ -21,8 +20,8 @@ MainWindowContentForm {
 	}
 
 	function updateModel() {
-		roomListView.model = Net.toListModel(bridge.roomDataList);
-		console.log("view.model: ", roomListView.model.rowCount());
+		var m = Net.toListModel(bridge.roomDataList);
+		roomListView.model = m;
 	}
 
 	function onSelectedRoomChanged() {

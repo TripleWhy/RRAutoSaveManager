@@ -10,7 +10,7 @@ Item {
 
     ScrollView {
         id: roomScroll
-        width: 200
+        width: 150
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.top: parent.top
@@ -19,7 +19,6 @@ Item {
             id: roomListView
             width: parent.width
             delegate: ItemDelegate {
-                id: fooDelegate
                 property variant myData: model
                 text: modelData.subRoomId + " " + modelData.subRoomName
                 width: parent.width
@@ -29,7 +28,6 @@ Item {
 
         Item {
             //TODO: since the update to qml.net 0.7.0 (and Qt 5.12) roomListView is not visible somehow without an item here.
-            id: rectangle
             visible: false
         }
     }
@@ -46,6 +44,10 @@ Item {
         anchors.topMargin: 0
     }
 }
+
+
+
+
 
 
 
