@@ -1,2 +1,5 @@
 module asm
+QmlBridge 0.1 QmlBridge.qml
 SubRoomData 0.1 SubRoomData.qml
+Net 0.1 Net.js
+RoomsModel 0.1 RoomsModel.qml
