@@ -117,12 +117,12 @@
 				{
 					Debug.Assert(data.SavePoints != null);
 					Debug.Assert(data.SavePoints.Count > 0);
-					Debug.Assert(data.SavePoints[data.SavePoints.Count - 1].Timestamp == e.timestamp);
+					Debug.Assert(data.SavePoints[0].Timestamp == e.timestamp);
 				}
 				else
 				{
-					Debug.Assert(data.SavePoints.Count == 0 || data.SavePoints[data.SavePoints.Count - 1].Timestamp != e.timestamp);
-					data.SavePoints.Add(new SubRoomData.SavePoint(e.timestamp, e.comment));
+					Debug.Assert(data.SavePoints.Count == 0 || data.SavePoints[0].Timestamp != e.timestamp);
+					data.SavePoints.Insert(0, new SubRoomData.SavePoint(e.timestamp, e.comment));
 					RaiseSavePointAdded(e.subRoomId, e.timestamp);
 				}
 			}

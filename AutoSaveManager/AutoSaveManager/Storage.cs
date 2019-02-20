@@ -40,7 +40,7 @@
 
 			insertCommand = new SQLiteCommand("INSERT OR REPLACE INTO autosaves(subRoomId, timestamp, comment, data) values (?, ?, ?, ?);", dbConnection);
 			selectLatestCommand = new SQLiteCommand("SELECT timestamp, data FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC LIMIT 1;", dbConnection);
-			selectTimestamps = new SQLiteCommand("SELECT timestamp, comment FROM autosaves WHERE subRoomId = ? ORDER BY timestamp ASC;", dbConnection);
+			selectTimestamps = new SQLiteCommand("SELECT timestamp, comment FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC;", dbConnection);
 			selectSpecivicBlobCommand = new SQLiteCommand("SELECT data FROM autosaves WHERE subRoomId = ? AND timestamp = ?;", dbConnection);
 			selectRoomsCommand = new SQLiteCommand("SELECT DISTINCT subRoomId FROM autosaves;", dbConnection);
 			selectRoomsAndNamesCommand = new SQLiteCommand("SELECT subRoomId, name FROM (SELECT DISTINCT subRoomId FROM autosaves) as sids LEFT OUTER JOIN roomNames USING(subRoomId);", dbConnection);
