@@ -54,8 +54,28 @@
 		{
 			string filename = Path.GetFileName(file);
 			long subRoomId = long.Parse(filename);
-			DateTime timestamp = File.GetLastWriteTimeUtc(file);
-			byte[] data = File.ReadAllBytes(file);
+
+			DateTime? timestamp = null;
+			byte[] data = null;
+			for (int i = 0; ; i++)
+			{
+				try
+				{
+					timestamp = File.GetLastWriteTimeUtc(file);
+					data = File.ReadAllBytes(file);
+					break;
+				}
+				catch (IOException e)
+				{
+					if (i >= 5 || e.HResult != unchecked((int)0x80070020))
+					{
+						Console.WriteLine("Failed to read file " + file + ", giving up after " + (i+1) + " attempts:");
+						Console.WriteLine(e);
+						break;
+					}
+					System.Threading.Thread.Sleep(500);
+				}
+			}
 
 			if (subRoomId != lastSavedSubRoomId)
 				lastSavedData = Store.FetchLatestSnapshot(subRoomId, out DateTime storedTimestamp);
@@ -64,7 +84,7 @@
 			if (DataEquals(data, lastSavedData))
 				return;
 			lastSavedData = data;
-			Store.StoreSnapshot(subRoomId, timestamp, data);
+			Store.StoreSnapshot(subRoomId, timestamp.Value, null, data);
 		}
 
 		//[PermissionSet(SecurityAction.Demand, Name="FullTrust")]
