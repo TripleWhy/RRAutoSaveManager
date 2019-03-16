@@ -26,6 +26,7 @@
 				"CREATE TABLE IF NOT EXISTS autosaves(" +
 				"subRoomId INTEGER, " +
 				"timestamp INTEGER, " +
+				"comment TEXT, " +
 				"data BLOB, " +
 				"PRIMARY KEY(subRoomId ASC, timestamp DESC)) " +
 				"WITHOUT ROWID;" +
@@ -37,9 +38,9 @@
 			SQLiteCommand command = new SQLiteCommand(createSql, dbConnection);
 			command.ExecuteNonQuery();
 
-			insertCommand = new SQLiteCommand("INSERT OR REPLACE INTO autosaves(subRoomId, timestamp, data) values (?, ?, ?);", dbConnection);
+			insertCommand = new SQLiteCommand("INSERT OR REPLACE INTO autosaves(subRoomId, timestamp, comment, data) values (?, ?, ?, ?);", dbConnection);
 			selectLatestCommand = new SQLiteCommand("SELECT timestamp, data FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC LIMIT 1;", dbConnection);
-			selectTimestamps = new SQLiteCommand("SELECT timestamp FROM autosaves WHERE subRoomId = ? ORDER BY timestamp ASC;", dbConnection);
+			selectTimestamps = new SQLiteCommand("SELECT timestamp, comment FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC;", dbConnection);
 			selectSpecivicBlobCommand = new SQLiteCommand("SELECT data FROM autosaves WHERE subRoomId = ? AND timestamp = ?;", dbConnection);
 			selectRoomsCommand = new SQLiteCommand("SELECT DISTINCT subRoomId FROM autosaves;", dbConnection);
 			selectRoomsAndNamesCommand = new SQLiteCommand("SELECT subRoomId, name FROM (SELECT DISTINCT subRoomId FROM autosaves) as sids LEFT OUTER JOIN roomNames USING(subRoomId);", dbConnection);
@@ -62,14 +63,15 @@
 			dbConnection = null;
 		}
 
-		public void StoreSnapshot(long subRoomId, DateTime timestamp, byte[] blob)
+		public void StoreSnapshot(long subRoomId, DateTime timestamp, string comment, byte[] blob)
 		{
 			insertCommand.Parameters.Clear();
 			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
 			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)timestamp.Ticks));
+			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.String, (object)comment));
 			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Binary, (object)blob));
 			insertCommand.ExecuteNonQuery();
-			SnapshotStored(this, new StoreEventArgs { subRoomId = subRoomId, timestamp = timestamp });
+			SnapshotStored(this, new StoreEventArgs { subRoomId = subRoomId, timestamp = timestamp, comment = comment });
 		}
 
 		public byte[] FetchLatestSnapshot(long subRoomId, out DateTime timestamp)
@@ -101,14 +103,14 @@
 			return null;
 		}
 
-		public IEnumerable<DateTime> FetchTimestamps(long subRoomId)
+		public IEnumerable<SavePointData> FetchTimestamps(long subRoomId)
 		{
 			selectTimestamps.Parameters.Clear();
 			selectTimestamps.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
 			using (SQLiteDataReader reader = selectTimestamps.ExecuteReader())
 			{
 				while (reader.Read())
-					yield return new DateTime(reader.GetInt64(0));
+					yield return new SavePointData { timestamp = new DateTime(reader.GetInt64(0)), comment = reader[1] as string };
 			}
 		}
 
@@ -136,10 +138,17 @@
 			}
 		}
 
+		public class SavePointData
+		{
+			public DateTime timestamp;
+			public string comment;
+		}
+
 		public class StoreEventArgs : EventArgs
 		{
 			public long subRoomId;
 			public DateTime timestamp;
+			public string comment;
 		}
 		public delegate void StoreEventHandler(object sender, StoreEventArgs a);
 		public event EventHandler<StoreEventArgs> SnapshotStored = delegate{ };
