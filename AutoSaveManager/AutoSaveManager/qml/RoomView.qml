@@ -15,6 +15,7 @@ RoomViewForm {
 		property variant myData: model
 		text: modelData.displayString
 		width: parent.width
+		highlighted: ListView.isCurrentItem
 		onClicked: savePointListView.currentIndex = index
 	}
 
