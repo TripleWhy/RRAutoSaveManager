@@ -8,6 +8,7 @@ Item {
     property alias subRoomLabelField: subRoomLabelField
     property alias savePointListView: savePointListView
     property alias selectedLabel: selectedLabel
+    property alias noteTextArea: noteTextArea
 
     RowLayout {
         id: topRow

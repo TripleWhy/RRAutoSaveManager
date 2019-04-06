@@ -20,23 +20,28 @@ RoomViewForm {
 	}
 
 	Component.onCompleted: {
-		savePointListView.currentItemChanged.connect(onSelectedSavePointChanged);
+		savePointListView.currentItemChanged.connect(onSelectedSavePointChanged)
+		noteTextArea.textChanged.connect(onNoteTextAreaTextChanged)
 	}
 
 	onSubRoomDataChanged: {
-		updateModel();
+		updateModel()
 	}
 
 	onCurrentSavePointChanged: {
-		if (currentSavePoint == null)
+		if (currentSavePoint == null) {
 			selectedLabel.text = ""
-		else
-			selectedLabel.text = currentSavePoint.displayString;
+			noteTextArea.text = ""
+		}
+		else {
+			selectedLabel.text = currentSavePoint.displayString
+			noteTextArea.text = currentSavePoint.comment
+		}
 	}
 
 	function updateModel() {
-		var m = Net.toListModel(subRoomData.savePoints);
-		savePointListView.model = m;
+		var m = Net.toListModel(subRoomData.savePoints)
+		savePointListView.model = m
 	}
 
 	function onSelectedSavePointChanged() {
@@ -46,5 +51,10 @@ RoomViewForm {
 		}
 		currentSavePoint = savePointListView.currentItem.myData.modelData
 		console.log(currentSavePoint)
+	}
+
+	function onNoteTextAreaTextChanged() {
+		if (currentSavePoint != null)
+			currentSavePoint.comment = noteTextArea.text
 	}
 }

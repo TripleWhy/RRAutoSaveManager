@@ -14,6 +14,7 @@
 		private SQLiteCommand selectSpecivicBlobCommand;
 		private SQLiteCommand selectRoomsCommand;
 		private SQLiteCommand selectRoomsAndNamesCommand;
+		private SQLiteCommand updateCommentCommand;
 
 		private readonly SQLiteCommand[] commands;
 
@@ -44,8 +45,9 @@
 			selectSpecivicBlobCommand = new SQLiteCommand("SELECT data FROM autosaves WHERE subRoomId = ? AND timestamp = ?;", dbConnection);
 			selectRoomsCommand = new SQLiteCommand("SELECT DISTINCT subRoomId FROM autosaves;", dbConnection);
 			selectRoomsAndNamesCommand = new SQLiteCommand("SELECT subRoomId, name FROM (SELECT DISTINCT subRoomId FROM autosaves) as sids LEFT OUTER JOIN roomNames USING(subRoomId);", dbConnection);
+			updateCommentCommand = new SQLiteCommand("UPDATE autosaves SET comment = ? WHERE subRoomId = ? AND timestamp = ?;", dbConnection);
 
-			commands = new SQLiteCommand[]{ insertCommand, selectLatestCommand, selectTimestamps, selectSpecivicBlobCommand, selectRoomsCommand, selectRoomsAndNamesCommand };
+			commands = new SQLiteCommand[]{ insertCommand, selectLatestCommand, selectTimestamps, selectSpecivicBlobCommand, selectRoomsCommand, selectRoomsAndNamesCommand, updateCommentCommand };
 		}
 		
 		~Storage()
@@ -136,6 +138,16 @@
 				while (reader.Read())
 					yield return new RoomAndName { subRoomId = reader.GetInt64(0), subRoomName = reader[1] as string };
 			}
+		}
+
+		public void StoreSnapshotComment(long subRoomId, DateTime timestamp, string comment)
+		{
+			updateCommentCommand.Parameters.Clear();
+			updateCommentCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.String, (object) comment));
+			updateCommentCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object) subRoomId));
+			updateCommentCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object) timestamp.Ticks));
+			updateCommentCommand.ExecuteNonQuery();
+			//SnapshotCommentChanged(this, new StoreEventArgs { subRoomId = subRoomId, timestamp = timestamp, comment = comment });
 		}
 
 		public class SavePointData
