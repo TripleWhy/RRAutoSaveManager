@@ -25,7 +25,7 @@
 				}
 			}
 
-			public int SubRoomId { get; set; } //TODO change to long when qml.net supports that
+			public long SubRoomId { get; set; }
 			public string SubRoomName { get; set; }
 			public DateTime TestDt { get; set; }
 			
@@ -88,7 +88,7 @@
 
 			RoomData.Clear();
 			foreach (Storage.RoomAndName ram in asm.Store.FetchSubRoomIdsWithNames())
-				RoomData.Add(ram.subRoomId, new SubRoomData { SubRoomId = (int)ram.subRoomId, SubRoomName = ram.subRoomName, LoadSavePoints = LoadSavePoints });
+				RoomData.Add(ram.subRoomId, new SubRoomData { SubRoomId = ram.subRoomId, SubRoomName = ram.subRoomName, LoadSavePoints = LoadSavePoints });
 			asm.Store.SnapshotStored += Store_SnapshotStored;
 
 			RaiseSubRoomAdded(-1);
@@ -128,7 +128,7 @@
 			}
 			else
 			{
-				data = new SubRoomData { SubRoomId = (int)e.subRoomId, SavePoints = new List<SubRoomData.SavePoint> { new SubRoomData.SavePoint(e.timestamp, e.comment) } };
+				data = new SubRoomData { SubRoomId = e.subRoomId, SavePoints = new List<SubRoomData.SavePoint> { new SubRoomData.SavePoint(e.timestamp, e.comment) } };
 				RoomData.Add(e.subRoomId, data);
 				RaiseSubRoomAdded(e.subRoomId);
 			}
@@ -136,13 +136,13 @@
 
 		private void RaiseSubRoomAdded(long subRoomId)
 		{
-			this.ActivateSignal("subRoomAdded", (int)subRoomId); //TODO make long
+			this.ActivateSignal("subRoomAdded", subRoomId);
 			this.ActivateSignal("roomDataChanged");
 		}
 
 		private void RaiseSavePointAdded(long subRoomId, DateTime? savePoint)
 		{
-			this.ActivateSignal("savePointAdded", (int)subRoomId, savePoint); //TODO make long
+			this.ActivateSignal("savePointAdded", subRoomId, savePoint);
 		}
 	}
 }
