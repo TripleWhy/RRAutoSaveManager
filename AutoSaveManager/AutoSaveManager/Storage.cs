@@ -38,7 +38,7 @@
 			SQLiteCommand command = new SQLiteCommand(createSql, dbConnection);
 			command.ExecuteNonQuery();
 
-			insertCommand = new SQLiteCommand("INSERT OR REPLACE INTO autosaves(subRoomId, timestamp, comment, data) values (?, ?, ?, ?);", dbConnection);
+			insertCommand = new SQLiteCommand("INSERT OR IGNORE INTO autosaves(subRoomId, timestamp, comment, data) values (?, ?, ?, ?);", dbConnection);
 			selectLatestCommand = new SQLiteCommand("SELECT timestamp, data FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC LIMIT 1;", dbConnection);
 			selectTimestamps = new SQLiteCommand("SELECT timestamp, comment FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC;", dbConnection);
 			selectSpecivicBlobCommand = new SQLiteCommand("SELECT data FROM autosaves WHERE subRoomId = ? AND timestamp = ?;", dbConnection);

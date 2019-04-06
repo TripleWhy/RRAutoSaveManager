@@ -22,6 +22,7 @@ Item {
                 property variant myData: model
                 text: modelData.subRoomId + " " + modelData.subRoomName
                 width: parent.width
+                highlighted: ListView.isCurrentItem
                 onClicked: roomListView.currentIndex = index
             }
         }

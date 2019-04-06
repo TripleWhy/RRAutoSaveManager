@@ -7,7 +7,7 @@ Item {
     property alias subRoomIdLabel: subRoomIdLabel
     property alias subRoomLabelField: subRoomLabelField
     property alias savePointListView: savePointListView
-	property alias selectedLabel: selectedLabel
+    property alias selectedLabel: selectedLabel
 
     RowLayout {
         id: topRow
@@ -101,6 +101,6 @@ Item {
 
 
 /*##^## Designer {
-    D{i:0;autoSize:true;height:480;width:640}D{i:9;anchors_x:402}D{i:11;anchors_x:505;anchors_y:79}
+    D{i:0;autoSize:true;height:480;width:640}
 }
  ##^##*/
