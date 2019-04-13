@@ -66,7 +66,6 @@ RoomViewForm {
 			return
 		}
 		currentSavePoint = savePointListView.currentItem.myData.modelData
-		console.log(currentSavePoint)
 	}
 
 	function onSubRoomLabelFieldTextChanged() {
