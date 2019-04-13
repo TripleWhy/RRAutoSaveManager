@@ -50,10 +50,15 @@
 
 		long lastSavedSubRoomId = -1;
 		byte[] lastSavedData;
+		DateTime lastRestoreTime;
+		long lastRestoredSubRoomId = -1;
 		public void SnapshotFile(string file)
 		{
 			string filename = Path.GetFileName(file);
 			long subRoomId = long.Parse(filename);
+
+			if (lastRestoredSubRoomId == subRoomId && (lastRestoreTime - DateTime.UtcNow).TotalSeconds < 2)
+				return;
 
 			DateTime? timestamp = null;
 			byte[] data = null;
@@ -120,6 +125,8 @@
 		public void RestoreSubRoom(long subRoomId, DateTime timestamp)
 		{
 			byte[] snapshot = Store.FetchSnapshot(subRoomId, timestamp);
+			lastRestoreTime = DateTime.UtcNow;
+			lastRestoredSubRoomId = subRoomId;
 			File.WriteAllBytes(autosaveDir + "/" + subRoomId, snapshot);
 		}
 	}
