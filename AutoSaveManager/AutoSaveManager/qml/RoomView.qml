@@ -41,6 +41,10 @@ RoomViewForm {
 		}
 	}
 
+	restoreButton.onClicked: {
+		bridge.restoreSubRoom(subRoomData.subRoomId, currentSavePoint.timestamp)
+	}
+
 	function updateModel() {
 		var m = Net.toListModel(subRoomData.savePoints)
 		savePointListView.model = m

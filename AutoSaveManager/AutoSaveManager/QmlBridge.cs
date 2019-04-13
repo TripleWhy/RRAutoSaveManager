@@ -266,6 +266,11 @@
 			}
 		}
 
+		public void RestoreSubRoom(long subRoomId, DateTime timestamp)
+		{
+			asm.RestoreSubRoom(subRoomId, timestamp);
+		}
+
 		private void RaiseSubRoomAdded(long subRoomId)
 		{
 			this.ActivateSignal("subRoomAdded", subRoomId);

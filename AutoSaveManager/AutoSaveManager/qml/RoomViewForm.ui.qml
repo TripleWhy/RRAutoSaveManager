@@ -9,6 +9,7 @@ Item {
     property alias savePointListView: savePointListView
     property alias selectedLabel: selectedLabel
     property alias noteTextArea: noteTextArea
+    property alias restoreButton: restoreButton
 
     RowLayout {
         id: topRow

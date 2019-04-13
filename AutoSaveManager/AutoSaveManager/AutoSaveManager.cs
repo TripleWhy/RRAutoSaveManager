@@ -116,5 +116,11 @@
 				Console.Error.WriteLine("File: " + e.FullPath + " update failed: " + ex);
 			}
 		}
+
+		public void RestoreSubRoom(long subRoomId, DateTime timestamp)
+		{
+			byte[] snapshot = Store.FetchSnapshot(subRoomId, timestamp);
+			File.WriteAllBytes(autosaveDir + "/" + subRoomId, snapshot);
+		}
 	}
 }
