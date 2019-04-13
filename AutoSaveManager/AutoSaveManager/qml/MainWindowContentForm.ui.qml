@@ -11,6 +11,9 @@ Item {
     ScrollView {
         id: roomScroll
         width: 150
+        anchors.leftMargin: 6
+        anchors.topMargin: 6
+        anchors.bottomMargin: 6
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.top: parent.top
@@ -35,25 +38,13 @@ Item {
 
     RoomView {
         id: roomView
-        anchors.leftMargin: 0
+        anchors.leftMargin: 6
         anchors.right: parent.right
-        anchors.rightMargin: 0
+        anchors.rightMargin: 6
         anchors.left: roomScroll.right
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 0
+        anchors.bottomMargin: 6
         anchors.top: parent.top
-        anchors.topMargin: 0
+        anchors.topMargin: 6
     }
 }
-
-
-
-
-
-
-
-
-/*##^## Designer {
-    D{i:2;anchors_width:400;invisible:true}
-}
- ##^##*/

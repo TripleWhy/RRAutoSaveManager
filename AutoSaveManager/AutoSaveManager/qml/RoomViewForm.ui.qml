@@ -29,7 +29,6 @@ Item {
 
         TextField {
             id: subRoomLabelField
-            text: qsTr("0")
         }
     }
 
@@ -64,7 +63,6 @@ Item {
     Button {
         id: restoreButton
         text: qsTr("Restore")
-        anchors.rightMargin: 6
         anchors.leftMargin: 6
         anchors.top: selectedLabel.bottom
         anchors.right: parent.right
@@ -76,7 +74,6 @@ Item {
         id: noteLabel
         text: qsTr("Notes:")
         visible: true
-        anchors.rightMargin: 6
         anchors.leftMargin: 6
         anchors.top: restoreButton.bottom
         anchors.right: parent.right
@@ -87,8 +84,6 @@ Item {
     TextArea {
         id: noteTextArea
         placeholderText: "Notes"
-        anchors.bottomMargin: 6
-        anchors.rightMargin: 6
         anchors.leftMargin: 6
         anchors.top: noteLabel.bottom
         anchors.right: parent.right
