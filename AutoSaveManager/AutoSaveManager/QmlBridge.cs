@@ -31,6 +31,7 @@
 					StoreComment = storeCommentCallback;
 				}
 
+				[NotifySignal]
 				public string Comment
 				{
 					get => comment;
@@ -40,6 +41,7 @@
 							return;
 						comment = value;
 						StartCommentStoreTimer();
+						this.ActivateSignal("commentChanged", comment);
 					}
 				}
 

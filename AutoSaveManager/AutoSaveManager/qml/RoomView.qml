@@ -14,6 +14,7 @@ RoomViewForm {
 	savePointListView.delegate: ItemDelegate {
 		property variant myData: model
 		text: modelData.displayString
+		font.bold: modelData.comment
 		width: parent.width
 		highlighted: ListView.isCurrentItem
 		onClicked: savePointListView.currentIndex = index
