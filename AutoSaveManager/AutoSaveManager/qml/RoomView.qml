@@ -21,6 +21,7 @@ RoomViewForm {
 
 	Component.onCompleted: {
 		savePointListView.currentItemChanged.connect(onSelectedSavePointChanged)
+		subRoomLabelField.textChanged.connect(onSubRoomLabelFieldTextChanged)
 		noteTextArea.textChanged.connect(onNoteTextAreaTextChanged)
 	}
 
@@ -51,6 +52,11 @@ RoomViewForm {
 		}
 		currentSavePoint = savePointListView.currentItem.myData.modelData
 		console.log(currentSavePoint)
+	}
+
+	function onSubRoomLabelFieldTextChanged() {
+		if (currentSubRoom != null)
+			currentSubRoom.subRoomName = subRoomLabelField.text
 	}
 
 	function onNoteTextAreaTextChanged() {

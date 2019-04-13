@@ -8,6 +8,7 @@
 
 	[Signal("subRoomAdded", NetVariantType.Int)]
 	[Signal("savePointAdded", NetVariantType.Int, NetVariantType.DateTime)]
+	[Signal("subRoomNameChanged", NetVariantType.Int, NetVariantType.Object)]
 	class QmlBridge : IDisposable
 	{
 		public class SubRoomData
@@ -64,26 +65,91 @@
 				}
 			}
 
+			public SubRoomData(long subRoomId, string subRoomName, List<SavePoint> savePoints, StoreNameCallback storeNameCallback)
+			{
+				this.SubRoomId = subRoomId;
+				this.subRoomName = subRoomName;
+				this.savePoints = savePoints;
+				this.StoreName = storeNameCallback;
+			}
+			public SubRoomData(long subRoomId, string subRoomName, LoadSavePointsCallback loadSavePointsCallback, StoreNameCallback storeNameCallback)
+			{
+				this.SubRoomId = subRoomId;
+				this.subRoomName = subRoomName;
+				this.LoadSavePoints = loadSavePointsCallback;
+				this.StoreName = storeNameCallback;
+			}
+
 			public long SubRoomId { get; set; }
-			public string SubRoomName { get; set; }
-			
+			private string subRoomName;
+			private Timer nameStoreTimer;
+
+			public delegate void StoreNameCallback(string comment);
+			public StoreNameCallback StoreName;
+
+			[NotifySignal]
+			public string SubRoomName
+			{
+				get => subRoomName;
+				set
+				{
+					string val = string.IsNullOrEmpty(value) ? null : value;
+					if (val == subRoomName)
+						return;
+					subRoomName = val;
+					StartNameStoreTimer();
+					RaiseSubRoomNameChanged();
+				}
+			}
+
+			private void StartNameStoreTimer()
+			{
+				if (nameStoreTimer == null)
+				{
+					nameStoreTimer = new Timer(1000);
+					nameStoreTimer.Elapsed += NameStoreTimer_Elapsed;
+					nameStoreTimer.AutoReset = false;
+				}
+				nameStoreTimer.Stop();
+				nameStoreTimer.Start();
+			}
+
+			private void NameStoreTimer_Elapsed(object sender, ElapsedEventArgs e)
+			{
+				Timer t = nameStoreTimer;
+				nameStoreTimer = null;
+				t.Dispose();
+
+				StoreName(subRoomName);
+			}
+
 			public delegate void LoadSavePointsCallback(long subRoomId);
 			public LoadSavePointsCallback LoadSavePoints;
 
-			private List<SavePoint> _savePoints;
-			public bool IsSavePointsInitialized { get => _savePoints != null; }
+			private List<SavePoint> savePoints;
+			public bool IsSavePointsInitialized { get => savePoints != null; }
 			public List<SavePoint> SavePoints
 			{
 				get
 				{
-					if (_savePoints == null && LoadSavePoints != null)
+					if (savePoints == null && LoadSavePoints != null)
 					{
 						LoadSavePoints(SubRoomId);
-						Debug.Assert(_savePoints != null);
+						Debug.Assert(savePoints != null);
 					}
-					return _savePoints;
+					return savePoints;
 				}
-				set => _savePoints = value;
+				set => savePoints = value;
+			}
+
+			private void RaiseSubRoomNameChanged()
+			{
+				this.ActivateSignal("subRoomNameChanged", subRoomName ?? "");
+			}
+
+			public void TestCallback()
+			{
+				Console.WriteLine(this + " " + GetHashCode() + " TestCallback");
 			}
 		}
 
@@ -117,6 +183,14 @@
 			Qml.RegisterType<SubRoomData>("asm", 0, 1);
 		}
 
+		private SubRoomData CreateSubRoomData(long subRoomId, string subRoomName, List<SubRoomData.SavePoint> savePoints)
+		{
+			if (savePoints != null)
+				return new SubRoomData(subRoomId, subRoomName, savePoints, (string name) => StoreSubRoomName(subRoomId, name));
+			else
+				return new SubRoomData(subRoomId, subRoomName, LoadSavePoints, (string name) => StoreSubRoomName(subRoomId, name));
+		}
+
 		public void Initialize()
 		{
 			if (asm != null)
@@ -126,7 +200,7 @@
 
 			RoomData.Clear();
 			foreach (Storage.RoomAndName ram in asm.Store.FetchSubRoomIdsWithNames())
-				RoomData.Add(ram.subRoomId, new SubRoomData { SubRoomId = ram.subRoomId, SubRoomName = ram.subRoomName, LoadSavePoints = LoadSavePoints });
+				RoomData.Add(ram.subRoomId, CreateSubRoomData(ram.subRoomId, ram.subRoomName, null));
 			asm.Store.SnapshotStored += Store_SnapshotStored;
 
 			RaiseSubRoomAdded(-1);
@@ -145,6 +219,13 @@
 				savePoints.Add(CreateSavePoint(subRoomId, spd.timestamp, spd.comment));
 			RoomData[subRoomId].SavePoints = savePoints;
 			RaiseSavePointAdded(subRoomId, null);
+		}
+
+		private void StoreSubRoomName(long subRoomId, string subRoomName)
+		{
+			Debug.Assert(RoomData.ContainsKey(subRoomId));
+			asm.Store.StoreSubRoomName(subRoomId, subRoomName);
+			this.ActivateSignal("subRoomNameChanged", subRoomId, subRoomName); //workaround, this should not be necessary
 		}
 
 		private void StoreSavePointComment(long subRoomId, DateTime timestamp, string comment)
@@ -177,7 +258,7 @@
 			}
 			else
 			{
-				data = new SubRoomData { SubRoomId = e.subRoomId, SavePoints = new List<SubRoomData.SavePoint> { CreateSavePoint(e.subRoomId, e.timestamp, e.comment) } };
+				data = CreateSubRoomData(e.subRoomId, null, new List<SubRoomData.SavePoint> { CreateSavePoint(e.subRoomId, e.timestamp, e.comment) });
 				RoomData.Add(e.subRoomId, data);
 				RaiseSubRoomAdded(e.subRoomId);
 			}

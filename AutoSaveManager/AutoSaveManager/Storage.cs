@@ -14,6 +14,7 @@
 		private SQLiteCommand selectSpecivicBlobCommand;
 		private SQLiteCommand selectRoomsCommand;
 		private SQLiteCommand selectRoomsAndNamesCommand;
+		private SQLiteCommand insertNameCommand;
 		private SQLiteCommand updateCommentCommand;
 
 		private readonly SQLiteCommand[] commands;
@@ -33,7 +34,8 @@
 				"WITHOUT ROWID;" +
 				"CREATE TABLE IF NOT EXISTS roomNames(" +
 				"subRoomId INTEGER PRIMARY KEY, " +
-				"name TEXT) " +
+				"name TEXT, " +
+				"FOREIGN KEY(subRoomId) REFERENCES autosaves(subRoomId)) " +
 				"WITHOUT ROWID;";
 
 			SQLiteCommand command = new SQLiteCommand(createSql, dbConnection);
@@ -45,9 +47,10 @@
 			selectSpecivicBlobCommand = new SQLiteCommand("SELECT data FROM autosaves WHERE subRoomId = ? AND timestamp = ?;", dbConnection);
 			selectRoomsCommand = new SQLiteCommand("SELECT DISTINCT subRoomId FROM autosaves;", dbConnection);
 			selectRoomsAndNamesCommand = new SQLiteCommand("SELECT subRoomId, name FROM (SELECT DISTINCT subRoomId FROM autosaves) as sids LEFT OUTER JOIN roomNames USING(subRoomId);", dbConnection);
+			insertNameCommand = new SQLiteCommand("INSERT OR REPLACE INTO roomNames(subRoomId, name) VALUES (?, ?);", dbConnection);
 			updateCommentCommand = new SQLiteCommand("UPDATE autosaves SET comment = ? WHERE subRoomId = ? AND timestamp = ?;", dbConnection);
 
-			commands = new SQLiteCommand[]{ insertCommand, selectLatestCommand, selectTimestamps, selectSpecivicBlobCommand, selectRoomsCommand, selectRoomsAndNamesCommand, updateCommentCommand };
+			commands = new SQLiteCommand[]{ insertCommand, selectLatestCommand, selectTimestamps, selectSpecivicBlobCommand, selectRoomsCommand, selectRoomsAndNamesCommand, insertNameCommand, updateCommentCommand };
 		}
 		
 		~Storage()
@@ -138,6 +141,15 @@
 				while (reader.Read())
 					yield return new RoomAndName { subRoomId = reader.GetInt64(0), subRoomName = reader[1] as string };
 			}
+		}
+
+		public void StoreSubRoomName(long subRoomId, string subRoomName)
+		{
+			insertNameCommand.Parameters.Clear();
+			insertNameCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
+			insertNameCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.String, (object)subRoomName));
+			insertNameCommand.ExecuteNonQuery();
+			//SubRoomNameChanged(this, new StoreEventArgs { subRoomId = subRoomId, subRoomName = subRoomName });
 		}
 
 		public void StoreSnapshotComment(long subRoomId, DateTime timestamp, string comment)
