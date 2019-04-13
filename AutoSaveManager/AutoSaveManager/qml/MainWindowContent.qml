@@ -12,7 +12,8 @@ MainWindowContentForm {
 	}
 
 	onBridgeChanged: {
-		bridge.roomDataChanged.connect(updateModel);
+		bridge.subRoomAdded.connect(updateModel);
+		bridge.savePointAdded.connect(onSavePointAdded);
 		updateModel();
 	}
 
@@ -20,9 +21,11 @@ MainWindowContentForm {
 		roomView.subRoomData = currentSubRoom
 	}
 
-	function updateModel() {
+	function updateModel(subRoomId) {
 		var m = Net.toListModel(bridge.roomDataList);
 		roomListView.model = m;
+		if (subRoomId >= 0)
+			selectSubRoom(subRoomId)
 	}
 
 	function onSelectedRoomChanged() {
@@ -50,5 +53,23 @@ MainWindowContentForm {
 				}
 			}
 		}
+	}
+
+	function selectSubRoom(subRoomId)
+	{
+		for (var i = 0; i < roomListView.count; ++i) {
+			if (roomListView.model.at(i).subRoomId === subRoomId) {
+				roomListView.currentIndex = i
+				break
+			}
+		}
+	}
+
+	function onSavePointAdded(subRoomId, timestamp) {
+		if (currentSubRoom.subRoomId !== subRoomId)
+			selectSubRoom(subRoomId)
+		else
+			roomView.updateModel()
+		roomView.selectSavePoint(timestamp)
 	}
 }

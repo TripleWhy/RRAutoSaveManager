@@ -2,7 +2,7 @@ import QtQuick 2.0
 
 Item
 {
-	signal roomDataChanged()
+	signal subRoomAdded(int subRoomId)
 	property list<SubRoomData> roomDataList: [
 		SubRoomData{ subRoomId: 100; subRoomName: "Room0" },
 		SubRoomData{ subRoomId: 101; subRoomName: "Room1" },
@@ -25,7 +25,7 @@ Item
 			}
 			roomDataList[i].savePoints = dates;
 		}
-		roomDataChanged();
+		subRoomAdded(-1);
 	}
 
 

@@ -274,7 +274,6 @@
 		private void RaiseSubRoomAdded(long subRoomId)
 		{
 			this.ActivateSignal("subRoomAdded", subRoomId);
-			this.ActivateSignal("roomDataChanged");
 		}
 
 		private void RaiseSavePointAdded(long subRoomId, DateTime? savePoint)

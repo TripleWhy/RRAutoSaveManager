@@ -50,6 +50,16 @@ RoomViewForm {
 		savePointListView.model = m
 	}
 
+	function selectSavePoint(timestamp)
+	{
+		for (var i = 0; i < savePointListView.count; ++i) {
+			if (savePointListView.model.at(i).timestamp === timestamp) {
+				savePointListView.currentIndex = i
+				break
+			}
+		}
+	}
+
 	function onSelectedSavePointChanged() {
 		if (savePointListView === null || savePointListView.currentItem === null) {
 			currentSavePoint = null
