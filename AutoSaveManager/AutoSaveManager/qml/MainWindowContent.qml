@@ -8,7 +8,6 @@ MainWindowContentForm {
 
 	Component.onCompleted: {
 		roomListView.currentItemChanged.connect(onSelectedRoomChanged);
-		bridge.subRoomNameChanged.connect(onSubRoomNameChanged); //workaround, this should not be necessary
 	}
 
 	onBridgeChanged: {
@@ -19,6 +18,10 @@ MainWindowContentForm {
 
 	onCurrentSubRoomChanged: {
 		roomView.subRoomData = currentSubRoom
+	}
+
+	roomView.onRoomRenamed: {
+		roomListView.currentItem.text = currentSubRoom.subRoomId + " " + currentSubRoom.subRoomName
 	}
 
 	function updateModel(subRoomId) {
@@ -34,25 +37,6 @@ MainWindowContentForm {
 			return
 		}
 		currentSubRoom = roomListView.currentItem.myData.modelData
-	}
-
-	function onSubRoomNameChanged(subRoomId, newName) {
-		if (roomListView.currentItem.myData.modelData.subRoomId === subRoomId) {
-			roomListView.currentItem.text = roomListView.currentItem.myData.modelData.subRoomId + " " + roomListView.currentItem.myData.modelData.subRoomName
-		}
-		else {
-			for(var child in roomListView.contentItem.children) {
-				var delegate = roomListView.contentItem.children[child]
-				var myData = delegate.myData
-				if (myData) {
-					var srd = myData.modelData
-					if (srd.subRoomId === subRoomId) {
-						delegate.text = srd.subRoomId + " " + srd.subRoomName
-						break;
-					}
-				}
-			}
-		}
 	}
 
 	function selectSubRoom(subRoomId)

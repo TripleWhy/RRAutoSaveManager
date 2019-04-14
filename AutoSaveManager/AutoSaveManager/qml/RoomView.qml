@@ -3,6 +3,7 @@ import QtQuick.Controls 2.2
 import asm 0.1
 
 RoomViewForm {
+	signal roomRenamed(string newName)
 	property SubRoomData subRoomData
 	property var currentSavePoint: null
 
@@ -69,8 +70,10 @@ RoomViewForm {
 	}
 
 	function onSubRoomLabelFieldTextChanged() {
-		if (currentSubRoom != null)
+		if (currentSubRoom != null) {
 			currentSubRoom.subRoomName = subRoomLabelField.text
+			roomRenamed(currentSubRoom.subRoomName)
+		}
 	}
 
 	function onNoteTextAreaTextChanged() {

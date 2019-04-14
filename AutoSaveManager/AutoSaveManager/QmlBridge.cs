@@ -8,7 +8,6 @@
 
 	[Signal("subRoomAdded", NetVariantType.Int)]
 	[Signal("savePointAdded", NetVariantType.Int, NetVariantType.DateTime)]
-	[Signal("subRoomNameChanged", NetVariantType.Int, NetVariantType.Object)]
 	class QmlBridge : IDisposable
 	{
 		public class SubRoomData
@@ -227,7 +226,6 @@
 		{
 			Debug.Assert(RoomData.ContainsKey(subRoomId));
 			asm.Store.StoreSubRoomName(subRoomId, subRoomName);
-			this.ActivateSignal("subRoomNameChanged", subRoomId, subRoomName); //workaround, this should not be necessary
 		}
 
 		private void StoreSavePointComment(long subRoomId, DateTime timestamp, string comment)
