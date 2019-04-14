@@ -1,1 +1,1 @@
-start dotnet AutoSaveManager.dll
+dotnet AutoSaveManager.dll
