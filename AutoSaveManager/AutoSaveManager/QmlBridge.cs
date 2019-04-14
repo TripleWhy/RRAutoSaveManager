@@ -236,7 +236,7 @@
 
 		public static string SavePointDisplayString(DateTime dt)
 		{
-			return dt.ToString();
+			return dt.ToLocalTime().ToString();
 		}
 
 		private void Store_SnapshotStored(object sender, Storage.StoreEventArgs e)
