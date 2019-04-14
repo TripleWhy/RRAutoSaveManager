@@ -3,12 +3,13 @@ import QtQuick 2.0
 Item
 {
 	signal subRoomAdded(int subRoomId)
+	signal savePointAdded(int subRoomId, var timestamp)
 	property list<SubRoomData> roomDataList: [
-		SubRoomData{ subRoomId: 100; subRoomName: "Room0" },
-		SubRoomData{ subRoomId: 101; subRoomName: "Room1" },
-		SubRoomData{ subRoomId: 102; subRoomName: "Room2" },
-		SubRoomData{ subRoomId: 103; subRoomName: "Room3" },
-		SubRoomData{ subRoomId: 104; subRoomName: "Room4" }
+		SubRoomData{ subRoomId: 100; subRoomName: "Room0"; savePoints: [SavePoint{comment: "foo"}, SavePoint{comment: "bar"}] },
+		SubRoomData{ subRoomId: 101; subRoomName: "Room1"; savePoints: [SavePoint{}] },
+		SubRoomData{ subRoomId: 102; subRoomName: "Room2"; savePoints: [SavePoint{}, SavePoint{}, SavePoint{}] },
+		SubRoomData{ subRoomId: 103; subRoomName: "Room3"; savePoints: [SavePoint{}, SavePoint{}] },
+		SubRoomData{ subRoomId: 104; subRoomName: "Room4"; savePoints: [SavePoint{}, SavePoint{}] }
 	]
 
 	function initialize()
