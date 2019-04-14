@@ -95,7 +95,7 @@ RoomViewForm {
 	function onNoteTextAreaTextChanged() {
 		if (currentSavePoint != null) {
 			currentSavePoint.comment = noteTextArea.text
-			//savePointListView.currentItem.font.bold = currentSavePoint.comment //TODO works, but elides the text for some reason
+			savePointListView.currentItem.font.bold = currentSavePoint.comment
 		}
 	}
 }
