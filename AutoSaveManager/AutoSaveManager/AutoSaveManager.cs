@@ -124,10 +124,15 @@
 
 		public void RestoreSubRoom(long subRoomId, DateTime timestamp)
 		{
-			byte[] snapshot = Store.FetchSnapshot(subRoomId, timestamp);
+			RestoreSubRoom(subRoomId, timestamp, subRoomId);
+		}
+
+		public void RestoreSubRoom(long srcSubRoomId, DateTime timestamp, long dstSubRoomId)
+		{
+			byte[] snapshot = Store.FetchSnapshot(srcSubRoomId, timestamp);
 			lastRestoreTime = DateTime.UtcNow;
-			lastRestoredSubRoomId = subRoomId;
-			File.WriteAllBytes(autosaveDir + "/" + subRoomId, snapshot);
+			lastRestoredSubRoomId = dstSubRoomId;
+			File.WriteAllBytes(autosaveDir + "/" + dstSubRoomId, snapshot);
 		}
 	}
 }

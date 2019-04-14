@@ -10,6 +10,7 @@ Item {
     property alias selectedLabel: selectedLabel
     property alias noteTextArea: noteTextArea
     property alias restoreButton: restoreButton
+    property alias restoreToButton: restoreToButton
 
     RowLayout {
         id: topRow
@@ -64,9 +65,10 @@ Item {
     Button {
         id: restoreButton
         text: qsTr("Restore")
+        anchors.rightMargin: -1
         anchors.leftMargin: 6
         anchors.top: selectedLabel.bottom
-        anchors.right: parent.right
+        anchors.right: restoreToButton.left
         anchors.left: scrollView.right
         anchors.topMargin: 6
     }
@@ -92,12 +94,21 @@ Item {
         anchors.left: scrollView.right
         anchors.topMargin: 6
     }
+
+    Button {
+        id: restoreToButton
+        width: 25
+        text: "..."
+        anchors.bottom: restoreButton.bottom
+        anchors.top: restoreButton.top
+        anchors.right: parent.right
+    }
 }
 
 
 
 
 /*##^## Designer {
-    D{i:0;autoSize:true;height:480;width:640}
+    D{i:0;autoSize:true;height:480;width:640}D{i:13;anchors_x:595;anchors_y:65}
 }
  ##^##*/

@@ -72,6 +72,7 @@
 				this.subRoomName = subRoomName;
 				this.savePoints = savePoints;
 				this.StoreName = storeNameCallback;
+				UpdateDisplayString();
 			}
 			public SubRoomData(long subRoomId, string subRoomName, LoadSavePointsCallback loadSavePointsCallback, StoreNameCallback storeNameCallback)
 			{
@@ -79,11 +80,15 @@
 				this.subRoomName = subRoomName;
 				this.LoadSavePoints = loadSavePointsCallback;
 				this.StoreName = storeNameCallback;
+				UpdateDisplayString();
 			}
 
 			public long SubRoomId { get; set; }
 			private string subRoomName;
 			private Timer nameStoreTimer;
+
+			[NotifySignal]
+			public string DisplayString { get; private set; }
 
 			public delegate void StoreNameCallback(string comment);
 			public StoreNameCallback StoreName;
@@ -100,6 +105,7 @@
 					subRoomName = val;
 					StartNameStoreTimer();
 					RaiseSubRoomNameChanged();
+					UpdateDisplayString();
 				}
 			}
 
@@ -148,9 +154,12 @@
 				this.ActivateSignal("subRoomNameChanged", subRoomName ?? "");
 			}
 
-			public void TestCallback()
+			private void UpdateDisplayString()
 			{
-				Console.WriteLine(this + " " + GetHashCode() + " TestCallback");
+				if (string.IsNullOrEmpty(SubRoomName))
+					DisplayString = SubRoomId.ToString();
+				else
+					DisplayString = SubRoomId.ToString() + " " + SubRoomName;
 			}
 		}
 
@@ -267,6 +276,11 @@
 		public void RestoreSubRoom(long subRoomId, DateTime timestamp)
 		{
 			asm.RestoreSubRoom(subRoomId, timestamp);
+		}
+
+		public void RestoreSubRoom(long srcSubRoomId, DateTime timestamp, long dstSubRoomId)
+		{
+			asm.RestoreSubRoom(srcSubRoomId, timestamp, dstSubRoomId);
 		}
 
 		private void RaiseSubRoomAdded(long subRoomId)

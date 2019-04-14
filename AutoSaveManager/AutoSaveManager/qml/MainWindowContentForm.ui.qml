@@ -23,7 +23,7 @@ Item {
             width: parent.width
             delegate: ItemDelegate {
                 property variant myData: model
-                text: modelData.subRoomId + " " + modelData.subRoomName
+                text: modelData.displayString
                 width: parent.width
                 highlighted: ListView.isCurrentItem
                 onClicked: roomListView.currentIndex = index

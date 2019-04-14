@@ -21,14 +21,20 @@ MainWindowContentForm {
 	}
 
 	roomView.onRoomRenamed: {
-		roomListView.currentItem.text = currentSubRoom.subRoomId + " " + currentSubRoom.subRoomName
+		roomListView.currentItem.text = currentSubRoom.displayString
 	}
 
 	function updateModel(subRoomId) {
-		var m = Net.toListModel(bridge.roomDataList);
-		roomListView.model = m;
+		var m = Net.toListModel(bridge.roomDataList)
+		roomListView.model = m
 		if (subRoomId >= 0)
 			selectSubRoom(subRoomId)
+
+		//roomView.restoreToDialogComboBox.model = m //TODO should work but does not render any text
+		roomView.restoreToDialogComboBox.model.clear()
+		for (var i = 0; i < roomListView.count; ++i) {
+			roomView.restoreToDialogComboBox.model.append({"displayString": m.at(i).displayString, "subRoomId": m.at(i).subRoomId})
+		}
 	}
 
 	function onSelectedRoomChanged() {

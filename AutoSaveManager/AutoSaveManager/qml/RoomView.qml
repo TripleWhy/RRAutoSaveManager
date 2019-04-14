@@ -1,11 +1,12 @@
 import QtQuick 2.4
-import QtQuick.Controls 2.2
+import QtQuick.Controls 2.5
 import asm 0.1
 
 RoomViewForm {
 	signal roomRenamed(string newName)
 	property SubRoomData subRoomData
 	property var currentSavePoint: null
+	property alias restoreToDialogComboBox: restoreToDialog.targetComboBox
 
 	visible: subRoomData != null
 	subRoomIdLabel.text: subRoomData == null ? null : subRoomData.subRoomId
@@ -19,6 +20,17 @@ RoomViewForm {
 		width: parent.width
 		highlighted: ListView.isCurrentItem
 		onClicked: savePointListView.currentIndex = index
+	}
+
+	RestoreToDialog {
+		id: restoreToDialog
+		onAccepted: {
+			if (restoreToDialogComboBox.currentIndex < 0)
+				return
+			var targetSubRoomId = restoreToDialogComboBox.model.get(restoreToDialogComboBox.currentIndex).subRoomId
+			console.log(subRoomData.subRoomId, targetSubRoomId)
+			bridge.restoreSubRoom(subRoomData.subRoomId, currentSavePoint.timestamp, targetSubRoomId)
+		}
 	}
 
 	Component.onCompleted: {
@@ -44,6 +56,10 @@ RoomViewForm {
 
 	restoreButton.onClicked: {
 		bridge.restoreSubRoom(subRoomData.subRoomId, currentSavePoint.timestamp)
+	}
+
+	restoreToButton.onClicked: {
+		restoreToDialog.open()
 	}
 
 	function updateModel() {
