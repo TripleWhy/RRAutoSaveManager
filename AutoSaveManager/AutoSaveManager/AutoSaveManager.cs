@@ -57,7 +57,7 @@
 			string filename = Path.GetFileName(file);
 			long subRoomId = long.Parse(filename);
 
-			if (lastRestoredSubRoomId == subRoomId && (lastRestoreTime - DateTime.UtcNow).TotalSeconds < 2)
+			if (lastRestoredSubRoomId == subRoomId && (DateTime.UtcNow - lastRestoreTime).TotalSeconds < 2)
 				return;
 
 			DateTime? timestamp = null;
