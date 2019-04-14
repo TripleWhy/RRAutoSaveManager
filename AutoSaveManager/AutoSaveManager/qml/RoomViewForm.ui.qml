@@ -36,6 +36,7 @@ Item {
     ScrollView {
         id: scrollView
         width: 300
+        font.pointSize: 8
         anchors.topMargin: 6
         anchors.top: topRow.bottom
         anchors.bottom: parent.bottom
