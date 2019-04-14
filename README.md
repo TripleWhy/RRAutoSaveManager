@@ -29,7 +29,7 @@ Unfortunately, autosaves are only identified by a numeric ID. In order to keep t
 #### Restoring Rooms
 1. Select the room and snapshot you want to resstore and click the restore button.
 2. In Rec Room, visit the room, if you are not already inside it.
-3. Open your watch, oben the room restore dialog, select the [Backup] line, and click ok.
+3. Open your watch, open the room restore dialog, select the [Backup] line, and click ok.
 Your room should now be in the desired state.
 
 ## Development
