@@ -21,7 +21,7 @@ When you run AutosaveManager, it watches for autosave files that rec room uses a
 
 ### Usage
 #### Running the Application
-Start the application by double clicking AutoSaveManager.bat or running `dotnet AutoSaveManager.dll`.
+Start the application by running `AutoSaveManager.exe`.
 It will watch for autosaves and store them as long as it's running.
 
 Unfortunately, autosaves are only identified by a numeric ID. In order to keep track of your rooms you can name them and store notes for each snapshot.
