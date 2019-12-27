@@ -6,18 +6,36 @@
 
 	class AutoSaveManager : IDisposable
 	{
-		private readonly string dataDir = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RRAutoSaveManager"));
+		private class WatchData
+		{
+			public string path;
+			public long autosaveFormatVersion;
+		}
+
+		private readonly string dataDir;
 		private readonly string dbFile;
-		private readonly string autosaveDir = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "../LocalLow/Against Gravity/Rec Room/Autosaves"));
+		private readonly WatchData[] watchDatas;
+		private readonly string latestAutosaveDir;
 
 		public Storage Store { get; }
 		private FileSystemWatcher watcher;
 
 		public AutoSaveManager()
 		{
+			string appDataLocal = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+			string appDataLocalLow = Path.GetFullPath(Path.Combine(appDataLocal, "../LocalLow/"));
+
+			dataDir = Path.GetFullPath(Path.Combine(appDataLocal, "RRAutoSaveManager"));
 			Directory.CreateDirectory(dataDir);
 			dbFile = Path.Combine(dataDir, "db.dat");
 			Store = new Storage(dbFile);
+
+			watchDatas = new WatchData[]
+			{
+				new WatchData{ path = Path.GetFullPath(Path.Combine(appDataLocalLow, "Against Gravity/Rec Room/Autosaves")), autosaveFormatVersion = 1 },
+				new WatchData{ path = Path.GetFullPath(Path.Combine(appDataLocalLow, "Against Gravity/Rec Room/AutosavesV2")), autosaveFormatVersion = 2 },
+			};
+			latestAutosaveDir = watchDatas[watchDatas.Length - 1].path;
 		}
 
 		public void Dispose()
@@ -30,15 +48,18 @@
 		{
 			if (watcher != null)
 				return;
-			SnapshotAllFiles(autosaveDir);
-			WatchFiles(autosaveDir);
+			foreach (WatchData watchData in watchDatas)
+			{
+				SnapshotAllFiles(watchData);
+				WatchFiles(watchData);
+			}
 		}
 
-		private void SnapshotAllFiles(string path)
+		private void SnapshotAllFiles(WatchData watchData)
 		{
-			Directory.CreateDirectory(path);
-			foreach (string file in Directory.EnumerateFileSystemEntries(path))
-				SnapshotFile(file);
+			Directory.CreateDirectory(watchData.path);
+			foreach (string file in Directory.EnumerateFileSystemEntries(watchData.path))
+				SnapshotFile(file, watchData.autosaveFormatVersion);
 		}
 
 		static public bool DataEquals(byte[] a1, byte[] b1)
@@ -52,7 +73,7 @@
 		byte[] lastSavedData;
 		DateTime lastRestoreTime;
 		long lastRestoredSubRoomId = -1;
-		public void SnapshotFile(string file)
+		public void SnapshotFile(string file, long autosaveFormatVersion)
 		{
 			string filename = Path.GetFileName(file);
 			long subRoomId = long.Parse(filename);
@@ -89,32 +110,33 @@
 			if (DataEquals(data, lastSavedData))
 				return;
 			lastSavedData = data;
-			Store.StoreSnapshot(subRoomId, timestamp.Value, null, data);
+			Store.StoreSnapshot(subRoomId, timestamp.Value, null, data, autosaveFormatVersion);
 		}
 
 		//[PermissionSet(SecurityAction.Demand, Name="FullTrust")]
-		private void WatchFiles(string path)
+		private void WatchFiles(WatchData watchData)
 		{
 			watcher = new FileSystemWatcher
 			{
-				Path = path,
+				Path = watchData.path,
 				Filter = "",
 				NotifyFilter = NotifyFilters.LastWrite,
 			};
 
-			watcher.Changed += new FileSystemEventHandler(OnChanged);
-			watcher.Created += new FileSystemEventHandler(OnChanged);
+			FileSystemEventHandler fseh = (object source, FileSystemEventArgs e) => OnChanged(source, e, watchData);
+			watcher.Changed += new FileSystemEventHandler(fseh);
+			watcher.Created += new FileSystemEventHandler(fseh);
 			
 			// Begin watching.
 			watcher.EnableRaisingEvents = true;
 		}
 
-		private void OnChanged(object source, FileSystemEventArgs e)
+		private void OnChanged(object source, FileSystemEventArgs e, WatchData watchData)
 		{
 			Console.WriteLine("File: " +  e.FullPath + " " + e.ChangeType);
 			try
 			{
-				SnapshotFile(e.FullPath);
+				SnapshotFile(e.FullPath, watchData.autosaveFormatVersion);
 			}
 			catch (Exception ex)
 			{
@@ -132,7 +154,7 @@
 			byte[] snapshot = Store.FetchSnapshot(srcSubRoomId, timestamp);
 			lastRestoreTime = DateTime.UtcNow;
 			lastRestoredSubRoomId = dstSubRoomId;
-			File.WriteAllBytes(autosaveDir + "/" + dstSubRoomId, snapshot);
+			File.WriteAllBytes(Path.Combine(latestAutosaveDir, dstSubRoomId.ToString()), snapshot);
 		}
 	}
 }
