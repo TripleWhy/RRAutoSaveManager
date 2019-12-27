@@ -2,8 +2,8 @@
 {
 	using System;
 	using System.Collections.Generic;
+	using System.Threading.Tasks;
 	using System.Data.SQLite;
-	using System.IO;
 
 	class Storage : IDisposable
 	{
@@ -28,6 +28,7 @@
 		private readonly SQLiteCommand setSettingCommand;
 
 		private readonly List<SQLiteCommand> commands = new List<SQLiteCommand>();
+		private List<Task<int>> nonQueryExecutionTasks = new List<Task<int>>();
 
 		public Storage(string dbFile)
 		{
@@ -54,7 +55,7 @@
 				"FOREIGN KEY(subRoomId) REFERENCES autosaves(subRoomId)) " +
 				"WITHOUT ROWID;";
 			SQLiteCommand command = new SQLiteCommand(createSql, dbConnection);
-			command.ExecuteNonQuery();
+			Task<int> commandTask = command.ExecuteNonQueryAsync();
 
 			insertCommand = AddCommand("INSERT OR IGNORE INTO autosaves(subRoomId, timestamp, comment, data, autosaveFormatVersion) values (?, ?, ?, ?, ?);", dbConnection);
 			selectLatestCommand = AddCommand("SELECT timestamp, data, autosaveFormatVersion FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC LIMIT 1;", dbConnection);
@@ -67,6 +68,7 @@
 			setSettingCommand = AddCommand("INSERT OR REPLACE INTO settings(name, intValue) VALUES (?, ?);", dbConnection);
 
 			command = new SQLiteCommand("SELECT name, intValue FROM settings;", dbConnection);
+			commandTask.Wait();
 			using (SQLiteDataReader reader = command.ExecuteReader())
 			{
 				while (reader.Read())
@@ -94,6 +96,9 @@
 		{
 			if (dbConnection == null)
 				return;
+			foreach (Task<int> task in nonQueryExecutionTasks)
+				task.Wait();
+			nonQueryExecutionTasks.Clear();
 			foreach (SQLiteCommand command in commands)
 				command.Dispose();
 			dbConnection.Dispose();
@@ -105,6 +110,26 @@
 			SQLiteCommand command = new SQLiteCommand(commandText, connection);
 			commands.Add(command);
 			return command;
+		}
+
+		private Task<int> AddExecutionTask(Task<int> task)
+		{
+			nonQueryExecutionTasks.Add(task);
+			for (int i = nonQueryExecutionTasks.Count - 1; i >= 0; i--)
+			{
+				Task<int> t = nonQueryExecutionTasks[i];
+				switch (t.Status)
+				{
+					case TaskStatus.RanToCompletion:
+					case TaskStatus.Canceled:
+					case TaskStatus.Faulted:
+						nonQueryExecutionTasks.RemoveAt(i);
+						break;
+					default:
+						break;
+				}
+			}
+			return task;
 		}
 
 		private void UpgradeDbFrom(long version)
@@ -135,7 +160,7 @@
 			setSettingCommand.Parameters.Clear();
 			setSettingCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.String, (object)key.ToString()));
 			setSettingCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)value));
-			setSettingCommand.ExecuteNonQuery();
+			AddExecutionTask(setSettingCommand.ExecuteNonQueryAsync());
 			settings[key] = value;
 		}
 
@@ -168,32 +193,36 @@
 			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.String, (object)comment));
 			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Binary, (object)blob));
 			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)autosaveFormatVersion));
-			insertCommand.ExecuteNonQuery();
+			AddExecutionTask(insertCommand.ExecuteNonQueryAsync());
 			SnapshotStored(this, new StoreEventArgs { subRoomId = subRoomId, timestamp = timestamp, comment = comment });
 		}
 
-		public byte[] FetchLatestSnapshot(long subRoomId, out DateTime timestamp)
+		public class SnapshotData
+		{
+			public byte[] data;
+			public DateTime timestamp;
+		}
+
+		public async Task<SnapshotData> FetchLatestSnapshotAsync(long subRoomId)
 		{
 			selectLatestCommand.Parameters.Clear();
 			selectLatestCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
-			using (SQLiteDataReader reader = selectLatestCommand.ExecuteReader())
+			using (SQLiteDataReader reader = (SQLiteDataReader)await selectLatestCommand.ExecuteReaderAsync())
 			{
 				if (reader.Read())
 				{
-					timestamp = new DateTime(reader.GetInt64(0));
-					return UpgradeSnapshot((byte[])reader[1], (long)reader[2]);
+					return new SnapshotData { timestamp = new DateTime(reader.GetInt64(0)), data = UpgradeSnapshot((byte[])reader[1], (long)reader[2]) };
 				}
 			}
-			timestamp = new DateTime();
 			return null;
 		}
 
-		public byte[] FetchSnapshot(long subRoomId, DateTime timestamp)
+		public async Task<byte[]> FetchSnapshotAsync(long subRoomId, DateTime timestamp)
 		{
 			selectSpecivicBlobCommand.Parameters.Clear();
 			selectSpecivicBlobCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
 			selectSpecivicBlobCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)timestamp.Ticks));
-			using (SQLiteDataReader reader = selectSpecivicBlobCommand.ExecuteReader())
+			using (SQLiteDataReader reader = (SQLiteDataReader)await selectSpecivicBlobCommand.ExecuteReaderAsync())
 			{
 				if (reader.Read())
 					return UpgradeSnapshot((byte[])reader[0], (long)reader[1]);
@@ -201,22 +230,22 @@
 			return null;
 		}
 
-		public IEnumerable<SavePointData> FetchTimestamps(long subRoomId)
+		public async IAsyncEnumerable<SavePointData> FetchTimestampsAsync(long subRoomId)
 		{
 			selectTimestamps.Parameters.Clear();
 			selectTimestamps.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
-			using (SQLiteDataReader reader = selectTimestamps.ExecuteReader())
+			using (SQLiteDataReader reader = (SQLiteDataReader)await selectTimestamps.ExecuteReaderAsync())
 			{
-				while (reader.Read())
+				while (await reader.ReadAsync())
 					yield return new SavePointData { timestamp = new DateTime(reader.GetInt64(0)), comment = reader[1] as string };
 			}
 		}
 
-		public IEnumerable<long> FetchSubRoomIds()
+		public async IAsyncEnumerable<long> FetchSubRoomIdsAsync()
 		{
-			using (SQLiteDataReader reader = selectRoomsCommand.ExecuteReader())
+			using (SQLiteDataReader reader = (SQLiteDataReader)await selectRoomsCommand.ExecuteReaderAsync())
 			{
-				while (reader.Read())
+				while (await reader.ReadAsync())
 					yield return reader.GetInt64(0);
 			}
 		}
@@ -227,11 +256,11 @@
 			public string subRoomName;
 		}
 
-		public IEnumerable<RoomAndName> FetchSubRoomIdsWithNames()
+		public async IAsyncEnumerable<RoomAndName> FetchSubRoomIdsWithNamesAsync()
 		{
-			using (SQLiteDataReader reader = selectRoomsAndNamesCommand.ExecuteReader())
+			using (SQLiteDataReader reader = (SQLiteDataReader)await selectRoomsAndNamesCommand.ExecuteReaderAsync())
 			{
-				while (reader.Read())
+				while (await reader.ReadAsync())
 					yield return new RoomAndName { subRoomId = reader.GetInt64(0), subRoomName = reader[1] as string };
 			}
 		}
@@ -241,7 +270,7 @@
 			insertNameCommand.Parameters.Clear();
 			insertNameCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
 			insertNameCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.String, (object)subRoomName));
-			insertNameCommand.ExecuteNonQuery();
+			AddExecutionTask(insertNameCommand.ExecuteNonQueryAsync());
 			//SubRoomNameChanged(this, new StoreEventArgs { subRoomId = subRoomId, subRoomName = subRoomName });
 		}
 
@@ -251,7 +280,7 @@
 			updateCommentCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.String, (object) comment));
 			updateCommentCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object) subRoomId));
 			updateCommentCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object) timestamp.Ticks));
-			updateCommentCommand.ExecuteNonQuery();
+			AddExecutionTask(updateCommentCommand.ExecuteNonQueryAsync());
 			//SnapshotCommentChanged(this, new StoreEventArgs { subRoomId = subRoomId, timestamp = timestamp, comment = comment });
 		}
 

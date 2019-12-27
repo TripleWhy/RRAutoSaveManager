@@ -73,7 +73,7 @@
 		byte[] lastSavedData;
 		DateTime lastRestoreTime;
 		long lastRestoredSubRoomId = -1;
-		public void SnapshotFile(string file, long autosaveFormatVersion)
+		public async void SnapshotFile(string file, long autosaveFormatVersion)
 		{
 			string filename = Path.GetFileName(file);
 			long subRoomId = long.Parse(filename);
@@ -104,7 +104,7 @@
 			}
 
 			if (subRoomId != lastSavedSubRoomId)
-				lastSavedData = Store.FetchLatestSnapshot(subRoomId, out DateTime storedTimestamp);
+				lastSavedData = (await Store.FetchLatestSnapshotAsync(subRoomId)).data;
 			lastSavedSubRoomId = subRoomId;
 
 			if (DataEquals(data, lastSavedData))
@@ -149,9 +149,9 @@
 			RestoreSubRoom(subRoomId, timestamp, subRoomId);
 		}
 
-		public void RestoreSubRoom(long srcSubRoomId, DateTime timestamp, long dstSubRoomId)
+		public async void RestoreSubRoom(long srcSubRoomId, DateTime timestamp, long dstSubRoomId)
 		{
-			byte[] snapshot = Store.FetchSnapshot(srcSubRoomId, timestamp);
+			byte[] snapshot = await Store.FetchSnapshotAsync(srcSubRoomId, timestamp);
 			lastRestoreTime = DateTime.UtcNow;
 			lastRestoredSubRoomId = dstSubRoomId;
 			File.WriteAllBytes(Path.Combine(latestAutosaveDir, dstSubRoomId.ToString()), snapshot);

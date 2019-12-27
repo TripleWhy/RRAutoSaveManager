@@ -201,7 +201,7 @@
 				return new SubRoomData(subRoomId, subRoomName, LoadSavePoints, (string name) => StoreSubRoomName(subRoomId, name));
 		}
 
-		public void Initialize()
+		public async void Initialize()
 		{
 			if (asm != null)
 				return;
@@ -209,7 +209,7 @@
 			asm.StartWatching();
 
 			RoomData.Clear();
-			foreach (Storage.RoomAndName ram in asm.Store.FetchSubRoomIdsWithNames())
+			await foreach (Storage.RoomAndName ram in asm.Store.FetchSubRoomIdsWithNamesAsync())
 				RoomData.Add(ram.subRoomId, CreateSubRoomData(ram.subRoomId, ram.subRoomName, null));
 			asm.Store.SnapshotStored += Store_SnapshotStored;
 
@@ -221,11 +221,11 @@
 			return new SubRoomData.SavePoint(timestamp, comment, (string newComment) => StoreSavePointComment(subRoomId, timestamp, newComment));
 		}
 
-		private void LoadSavePoints(long subRoomId)
+		private async void LoadSavePoints(long subRoomId)
 		{
 			Debug.Assert(RoomData.ContainsKey(subRoomId));
 			List<SubRoomData.SavePoint> savePoints = new List<SubRoomData.SavePoint>();
-			foreach (Storage.SavePointData spd in asm.Store.FetchTimestamps(subRoomId))
+			await foreach (Storage.SavePointData spd in asm.Store.FetchTimestampsAsync(subRoomId))
 				savePoints.Add(CreateSavePoint(subRoomId, spd.timestamp, spd.comment));
 			RoomData[subRoomId].SavePoints = savePoints;
 			RaiseSavePointAdded(subRoomId, null);
