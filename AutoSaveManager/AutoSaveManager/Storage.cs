@@ -31,6 +31,7 @@
 
 		public Storage(string dbFile)
 		{
+			bool dbIsNew = !File.Exists(dbFile);
 			dbConnection = new SQLiteConnection(string.Format("Data Source={0};Version=3;", dbFile));
 			dbConnection.Open();
 
@@ -78,11 +79,16 @@
 					settings[key] = reader[1];
 				}
 			}
-			long storedDbFormatVersion = (settings.GetValueOrDefault(SettingKey.DbFormatVersion) as long?).GetValueOrDefault(0L);
-			if (storedDbFormatVersion > dbFormatVersion)
-				throw new InvalidOperationException("Save file format version " + storedDbFormatVersion + " is newer than this program.");
-			for (long v = storedDbFormatVersion; v < dbFormatVersion; v++)
-				UpgradeDbFrom(v);
+			if (dbIsNew)
+				SetSetting(SettingKey.DbFormatVersion, dbFormatVersion);
+			else
+			{
+				long storedDbFormatVersion = (settings.GetValueOrDefault(SettingKey.DbFormatVersion) as long?).GetValueOrDefault(0L);
+				if (storedDbFormatVersion > dbFormatVersion)
+					throw new InvalidOperationException("Save file format version " + storedDbFormatVersion + " is newer than this program.");
+				for (long v = storedDbFormatVersion; v < dbFormatVersion; v++)
+					UpgradeDbFrom(v);
+			}
 		}
 
 		~Storage()
