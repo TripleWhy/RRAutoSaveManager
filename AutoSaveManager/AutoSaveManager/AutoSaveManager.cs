@@ -1,8 +1,10 @@
 ﻿namespace AutoSaveManager
 {
+	using Google.Protobuf;
 	using System;
 	using System.Collections;
 	using System.IO;
+	using System.Reflection;
 
 	class AutoSaveManager : IDisposable
 	{
@@ -16,6 +18,8 @@
 		private readonly string dbFile;
 		private readonly WatchData[] watchDatas;
 		private readonly string latestAutosaveDir;
+		static private MessageParser<Autosave> autosaveParser = Autosave.Parser.WithDiscardUnknownFields(false);
+		private const int hashSize = 32;
 
 		public Storage Store { get; }
 		private FileSystemWatcher watcher;
@@ -35,7 +39,7 @@
 				new WatchData{ path = Path.GetFullPath(Path.Combine(appDataLocalLow, "Against Gravity/Rec Room/Autosaves")), autosaveFormatVersion = 1 },
 				new WatchData{ path = Path.GetFullPath(Path.Combine(appDataLocalLow, "Against Gravity/Rec Room/AutosavesV2")), autosaveFormatVersion = 2 },
 			};
-			latestAutosaveDir = watchDatas[watchDatas.Length - 1].path;
+			latestAutosaveDir = watchDatas[^1].path;
 		}
 
 		public void Dispose()
@@ -49,10 +53,8 @@
 			if (watcher != null)
 				return;
 			foreach (WatchData watchData in watchDatas)
-			{
 				SnapshotAllFiles(watchData);
-				WatchFiles(watchData);
-			}
+			WatchFiles(watchDatas[^1]);
 		}
 
 		private void SnapshotAllFiles(WatchData watchData)
@@ -62,15 +64,9 @@
 				SnapshotFile(file, watchData.autosaveFormatVersion);
 		}
 
-		static public bool DataEquals(byte[] a1, byte[] b1)
-		{
-			return ((a1 == null) == (b1 == null))
-				&& (object.ReferenceEquals(a1, b1)
-					|| ((IStructuralEquatable)a1).Equals(b1, StructuralComparisons.StructuralEqualityComparer));
-		}
-
 		long lastSavedSubRoomId = -1;
-		byte[] lastSavedData;
+		ArraySegment<byte> lastSavedData;
+		long lastSavedFormatVersion = -1;
 		DateTime lastRestoreTime;
 		long lastRestoredSubRoomId = -1;
 		public void SnapshotFile(string file, long autosaveFormatVersion)
@@ -104,12 +100,15 @@
 			}
 
 			if (subRoomId != lastSavedSubRoomId)
-				lastSavedData = Store.FetchLatestSnapshot(subRoomId, out DateTime storedTimestamp);
+				lastSavedData = Store.FetchLatestSnapshotContentBytes(subRoomId, out _, out lastSavedFormatVersion);
 			lastSavedSubRoomId = subRoomId;
-
-			if (DataEquals(data, lastSavedData))
+			if (lastSavedFormatVersion > autosaveFormatVersion)
 				return;
-			lastSavedData = data;
+
+			ArraySegment<byte> content = SnapshotContentBtytes(data, autosaveFormatVersion);
+			if (SnapshotsEqual(content, lastSavedData))
+				return;
+			lastSavedData = content;
 			Store.StoreSnapshot(subRoomId, timestamp.Value, null, data, autosaveFormatVersion);
 		}
 
@@ -123,7 +122,7 @@
 				NotifyFilter = NotifyFilters.LastWrite,
 			};
 
-			FileSystemEventHandler fseh = (object source, FileSystemEventArgs e) => OnChanged(source, e, watchData);
+			FileSystemEventHandler fseh = (object source, FileSystemEventArgs e) => OnChanged(e, watchData);
 			watcher.Changed += new FileSystemEventHandler(fseh);
 			watcher.Created += new FileSystemEventHandler(fseh);
 			
@@ -131,7 +130,7 @@
 			watcher.EnableRaisingEvents = true;
 		}
 
-		private void OnChanged(object source, FileSystemEventArgs e, WatchData watchData)
+		private void OnChanged(FileSystemEventArgs e, WatchData watchData)
 		{
 			Console.WriteLine("File: " +  e.FullPath + " " + e.ChangeType);
 			try
@@ -151,10 +150,95 @@
 
 		public void RestoreSubRoom(long srcSubRoomId, DateTime timestamp, long dstSubRoomId)
 		{
-			byte[] snapshot = Store.FetchSnapshot(srcSubRoomId, timestamp);
+			byte[] snapshot = Store.FetchSnapshot(srcSubRoomId, timestamp, out long autosaveFormatVersion);
 			lastRestoreTime = DateTime.UtcNow;
 			lastRestoredSubRoomId = dstSubRoomId;
-			File.WriteAllBytes(Path.Combine(latestAutosaveDir, dstSubRoomId.ToString()), snapshot);
+
+			string filePath = Path.Combine(latestAutosaveDir, dstSubRoomId.ToString());
+			if (autosaveFormatVersion == Storage.autosaveFormatVersion && dstSubRoomId == srcSubRoomId)
+			{
+				File.WriteAllBytes(filePath, snapshot);
+			}
+			else
+			{
+				ArraySegment<byte> fileData = SnapshotContentBtytes(snapshot, autosaveFormatVersion);
+				UpdateSubroomId(ref fileData, dstSubRoomId);
+				AutosaveFromContent(ref fileData);
+				File.WriteAllBytes(filePath, fileData.ToArray());
+			}
+		}
+
+		static public ArraySegment<byte> SnapshotContentBtytes(byte[] data, long autosaveFormatVersion)
+		{
+			switch (autosaveFormatVersion)
+			{
+				case 1:
+					return data;
+				case Storage.autosaveFormatVersion:
+					return new ArraySegment<byte>(data, hashSize, data.Length - hashSize);
+				default:
+					throw new InvalidOperationException("Autosave format version " + autosaveFormatVersion + " unknown.");
+			};
+		}
+
+		static private void AutosaveFromContent(ref ArraySegment<byte> data)
+		{
+			byte[] hashValue;
+			using (System.Security.Cryptography.SHA256 hasher = System.Security.Cryptography.SHA256.Create())
+				hashValue = hasher.ComputeHash(data.Array, data.Offset, data.Count);
+			if (data.Offset >= hashValue.Length)
+			{
+				data = new ArraySegment<byte>(data.Array, data.Offset - hashValue.Length, data.Count + hashValue.Length);
+				hashValue.CopyTo(data.Array, data.Offset);
+			}
+			else
+			{
+				byte[] result = new byte[data.Count + hashValue.Length];
+				hashValue.CopyTo(result, 0);
+				data.CopyTo(result, hashValue.Length);
+				data = result;
+			}
+		}
+
+		static private void UpdateSubroomId(ref ArraySegment<byte> data, long dstSubRoomId)
+		{
+			Autosave autosave = autosaveParser.ParseFrom(data.Array, data.Offset, data.Count);
+			autosave.SubroomId = dstSubRoomId;
+
+			int messageSize = autosave.CalculateSize();
+			int autsaveSize = messageSize + hashSize;
+			if (data.Array.Length >= autsaveSize)
+				data = new ArraySegment<byte>(data.Array, hashSize, messageSize);
+			else
+				data = new ArraySegment<byte>(new byte[autsaveSize], hashSize, messageSize);
+			ConstructorInfo offsetConstructor = typeof(CodedOutputStream).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(byte[]), typeof(int), typeof(int) }, null); //constructr is private for some reason
+			CodedOutputStream output = (CodedOutputStream)offsetConstructor.Invoke(new object[] { data.Array, data.Offset, data.Count });
+			autosave.WriteTo(output);
+			output.CheckNoSpaceLeft();
+		}
+
+		static public bool SnapshotsEqual(ArraySegment<byte> a, ArraySegment<byte> b)
+		{
+			return ((a.Count == 0) == (b.Count == 0))
+				&& (a.Equals(b)
+					|| a.AsSpan().SequenceEqual(b.AsSpan())
+					|| ProtosEqual(a, b));
+		}
+
+		static public bool BytesEqual(byte[] a, byte[] b)
+		{
+			return ((a is null) == (b is null))
+				&& (object.ReferenceEquals(a, b)
+					|| ((IStructuralEquatable)a).Equals(b, StructuralComparisons.StructuralEqualityComparer));
+		}
+
+		static public bool ProtosEqual(ArraySegment<byte> a, ArraySegment<byte> b)
+		{
+			Autosave autosaveA = autosaveParser.ParseFrom(a.Array, a.Offset, a.Count);
+			Autosave autosaveB = autosaveParser.ParseFrom(b.Array, b.Offset, b.Count);
+			autosaveA.SubroomId = autosaveB.SubroomId = 0;
+			autosaveA.Timestamp = autosaveB.Timestamp = null;
+			return autosaveA.Equals(autosaveB);
 		}
 	}
 }

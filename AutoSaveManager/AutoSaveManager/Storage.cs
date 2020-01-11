@@ -8,7 +8,7 @@
 	class Storage : IDisposable
 	{
 		private const long dbFormatVersion = 1;
-		private const long autosaveFormatVersion = 2;
+		public const long autosaveFormatVersion = 2;
 
 		private enum SettingKey
 		{
@@ -73,8 +73,7 @@
 				while (reader.Read())
 				{
 					string name = (string)reader[0];
-					SettingKey key;
-					if (!Enum.TryParse<SettingKey>(name, true, out key))
+					if (!Enum.TryParse<SettingKey>(name, true, out SettingKey key))
 						continue;
 					settings[key] = reader[1];
 				}
@@ -145,27 +144,6 @@
 			settings[key] = value;
 		}
 
-		private byte[] UpgradeSnapshot(byte[] data, long autosaveFormatVersion)
-		{
-			switch (autosaveFormatVersion)
-			{
-				case 1:
-				{
-					byte[] hashValue;
-					using (System.Security.Cryptography.SHA256 mySHA256 = System.Security.Cryptography.SHA256.Create())
-						hashValue = mySHA256.ComputeHash(data);
-					byte[] result = new byte[data.Length + hashValue.Length];
-					hashValue.CopyTo(result, 0);
-					data.CopyTo(result, hashValue.Length);
-					return result;
-				}
-				case Storage.autosaveFormatVersion:
-					return data;
-				default:
-					throw new InvalidOperationException("Autosave format version " + autosaveFormatVersion + " unknown.");
-			}
-		}
-
 		public void StoreSnapshot(long subRoomId, DateTime timestamp, string comment, byte[] blob, long autosaveFormatVersion)
 		{
 			insertCommand.Parameters.Clear();
@@ -178,7 +156,7 @@
 			SnapshotStored(this, new StoreEventArgs { subRoomId = subRoomId, timestamp = timestamp, comment = comment });
 		}
 
-		public byte[] FetchLatestSnapshot(long subRoomId, out DateTime timestamp)
+		public ArraySegment<byte> FetchLatestSnapshotContentBytes(long subRoomId, out DateTime timestamp, out long autosaveFormatVersion)
 		{
 			selectLatestCommand.Parameters.Clear();
 			selectLatestCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
@@ -187,14 +165,16 @@
 				if (reader.Read())
 				{
 					timestamp = new DateTime(reader.GetInt64(0));
-					return UpgradeSnapshot((byte[])reader[1], (long)reader[2]);
+					autosaveFormatVersion = (long)reader[2];
+					return AutoSaveManager.SnapshotContentBtytes((byte[])reader[1], autosaveFormatVersion);
 				}
 			}
 			timestamp = new DateTime();
+			autosaveFormatVersion = 0;
 			return null;
 		}
 
-		public byte[] FetchSnapshot(long subRoomId, DateTime timestamp)
+		public byte[] FetchSnapshot(long subRoomId, DateTime timestamp, out long autosaveFormatVersion)
 		{
 			selectSpecivicBlobCommand.Parameters.Clear();
 			selectSpecivicBlobCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
@@ -202,8 +182,12 @@
 			using (SQLiteDataReader reader = selectSpecivicBlobCommand.ExecuteReader())
 			{
 				if (reader.Read())
-					return UpgradeSnapshot((byte[])reader[0], (long)reader[1]);
+				{
+					autosaveFormatVersion = (long)reader[1];
+					return (byte[])reader[0];
+				}
 			}
+			autosaveFormatVersion = 0;
 			return null;
 		}
 

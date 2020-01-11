@@ -1,0 +1,10 @@
+﻿syntax = "proto3";
+package AutoSaveManager;
+
+import "google/protobuf/timestamp.proto";
+
+message Autosave
+{
+	google.protobuf.Timestamp timestamp = 3;
+	int64 subroomId = 6;
+}

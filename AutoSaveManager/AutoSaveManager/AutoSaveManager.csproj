@@ -8,6 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.11.2" />
+    <PackageReference Include="Google.Protobuf.Tools" Version="3.11.2" />
     <PackageReference Include="Qml.Net" Version="0.10.1" />
     <PackageReference Include="Qml.Net.WindowsBinaries" Version="0.10.1" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.112" />
@@ -42,5 +44,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="$(userprofile)\.nuget\packages\google.protobuf.tools\3.11.2\tools\windows_x64\protoc -I=&quot;$(userprofile)\.nuget\packages\google.protobuf.tools\3.11.2\tools&quot; -I=&quot;$(ProjectDir)\protobuf&quot; --csharp_out=&quot;$(ProjectDir)\protobuf\generated&quot; &quot;AutoSave.proto&quot;" />
+  </Target>
 
 </Project>
