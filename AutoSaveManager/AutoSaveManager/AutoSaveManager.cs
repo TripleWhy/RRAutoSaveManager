@@ -18,7 +18,7 @@
 		private readonly string dbFile;
 		private readonly WatchData[] watchDatas;
 		private readonly string latestAutosaveDir;
-		static private MessageParser<Autosave> autosaveParser = Autosave.Parser.WithDiscardUnknownFields(false);
+		private static readonly MessageParser<Autosave> autosaveParser = Autosave.Parser.WithDiscardUnknownFields(false);
 		private const int hashSize = 32;
 
 		public Storage Store { get; }
