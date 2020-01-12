@@ -153,7 +153,69 @@
 			using (SQLiteCommand command = new SQLiteCommand(sql, dbConnection))
 				command.ExecuteNonQuery();
 			SetSetting(SettingKey.DbFormatVersion, 1);
+			RemoveOldDuplicates(transaction);
 			transaction.Commit();
+		}
+
+		private void RemoveOldDuplicates(SQLiteTransaction transaction)
+		{
+			if (transaction is null)
+				transaction = dbConnection.BeginTransaction();
+			else
+				transaction = null;
+			try
+			{
+				using SQLiteCommand selectCommand = new SQLiteCommand("SELECT subRoomId, timestamp, comment is NULL OR comment == '', data, autosaveFormatVersion FROM autosaves;", dbConnection);
+				using SQLiteCommand deleteCommand = new SQLiteCommand("DELETE FROM autosaves WHERE subRoomId == ? AND timestamp == ?;", dbConnection);
+				deleteCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.String));
+				deleteCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64));
+
+				long lastSubRoomId = -1;
+				long lastTimestamp = 0;
+				bool lastCommentEmpty = true;
+				byte[] lastData = null;
+				long lastAutosaveFormatVersion = -1;
+				using SQLiteDataReader reader = selectCommand.ExecuteReader();
+				while (reader.Read())
+				{
+					long subRoomId = (long)reader[0];
+					long timestamp = (long)reader[1];
+					bool commentEmpty = ((long)reader[2] != 0L);
+					byte[] data = (byte[])reader[3];
+					long autosaveFormatVersion = (long)reader[4];
+
+					if (subRoomId == lastSubRoomId)
+					{
+						if ((commentEmpty || lastCommentEmpty) && AutoSaveManager.SnapshotsEqual(lastData, lastAutosaveFormatVersion, data, autosaveFormatVersion))
+						{
+							if (commentEmpty)
+							{
+								deleteCommand.Parameters[0].Value = subRoomId;
+								deleteCommand.Parameters[1].Value = timestamp;
+							}
+							else
+							{
+								deleteCommand.Parameters[0].Value = lastSubRoomId;
+								deleteCommand.Parameters[1].Value = lastTimestamp;
+							}
+							Console.WriteLine("Delete (" + deleteCommand.Parameters[0].Value + ", " + deleteCommand.Parameters[1].Value + ")");
+							deleteCommand.ExecuteNonQuery();
+						}
+					}
+					lastSubRoomId = subRoomId;
+					lastTimestamp = timestamp;
+					lastCommentEmpty = commentEmpty;
+					lastData = data;
+					lastAutosaveFormatVersion = autosaveFormatVersion;
+				}
+				if (transaction != null)
+					transaction.Commit();
+			}
+			finally
+			{
+				if (transaction != null)
+					transaction.Dispose();
+			}
 		}
 
 		private void SetSetting(SettingKey key, object value)

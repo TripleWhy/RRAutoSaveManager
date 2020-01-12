@@ -217,12 +217,17 @@
 			output.CheckNoSpaceLeft();
 		}
 
-		static public bool SnapshotsEqual(ArraySegment<byte> a, ArraySegment<byte> b)
+		static public bool SnapshotsEqual(byte[] a, long autosaveFormatVersionA, byte[] b, long autosaveFormatVersionB)
 		{
-			return ((a.Count == 0) == (b.Count == 0))
-				&& (a.Equals(b)
-					|| a.AsSpan().SequenceEqual(b.AsSpan())
-					|| ProtosEqual(a, b));
+			return SnapshotsEqual(SnapshotContentBtytes(a, autosaveFormatVersionA), SnapshotContentBtytes(b, autosaveFormatVersionB));
+		}
+
+		static public bool SnapshotsEqual(ArraySegment<byte> contentBytesA, ArraySegment<byte> contentBytesB)
+		{
+			return ((contentBytesA.Count == 0) == (contentBytesB.Count == 0))
+				&& (contentBytesA.Equals(contentBytesB)
+					|| contentBytesA.AsSpan().SequenceEqual(contentBytesB.AsSpan())
+					|| ProtosEqual(contentBytesA, contentBytesB));
 		}
 
 		static public bool BytesEqual(byte[] a, byte[] b)
