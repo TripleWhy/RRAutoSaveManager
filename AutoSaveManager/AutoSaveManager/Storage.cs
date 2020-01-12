@@ -56,15 +56,22 @@
 			using (SQLiteCommand command = new SQLiteCommand(createTablesSql, dbConnection))
 				command.ExecuteNonQuery();
 
-			insertCommand = AddCommand("INSERT OR IGNORE INTO autosaves(subRoomId, timestamp, comment, data, autosaveFormatVersion) values (?, ?, ?, ?, ?);", dbConnection);
-			selectLatestCommand = AddCommand("SELECT timestamp, data, autosaveFormatVersion FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC LIMIT 1;", dbConnection);
-			selectTimestamps = AddCommand("SELECT timestamp, comment FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC;", dbConnection);
-			selectSpecivicBlobCommand = AddCommand("SELECT data, autosaveFormatVersion FROM autosaves WHERE subRoomId = ? AND timestamp = ?;", dbConnection);
-			selectRoomsCommand = AddCommand("SELECT DISTINCT subRoomId FROM autosaves;", dbConnection);
-			selectRoomsAndNamesCommand = AddCommand("SELECT subRoomId, name FROM (SELECT DISTINCT subRoomId FROM autosaves) as sids LEFT OUTER JOIN roomNames USING(subRoomId);", dbConnection);
-			insertNameCommand = AddCommand("INSERT OR REPLACE INTO roomNames(subRoomId, name) VALUES (?, ?);", dbConnection);
-			updateCommentCommand = AddCommand("UPDATE autosaves SET comment = ? WHERE subRoomId = ? AND timestamp = ?;", dbConnection);
-			setSettingCommand = AddCommand("INSERT OR REPLACE INTO settings(name, intValue) VALUES (?, ?);", dbConnection);
+			insertCommand = AddCommand(dbConnection, "INSERT OR IGNORE INTO autosaves(subRoomId, timestamp, comment, data, autosaveFormatVersion) values (?, ?, ?, ?, ?);",
+				System.Data.DbType.Int64, System.Data.DbType.Int64, System.Data.DbType.String, System.Data.DbType.Binary, System.Data.DbType.Int64);
+			selectLatestCommand = AddCommand(dbConnection, "SELECT timestamp, data, autosaveFormatVersion FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC LIMIT 1;",
+				System.Data.DbType.Int64);
+			selectTimestamps = AddCommand(dbConnection, "SELECT timestamp, comment FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC;",
+				System.Data.DbType.Int64);
+			selectSpecivicBlobCommand = AddCommand(dbConnection, "SELECT data, autosaveFormatVersion FROM autosaves WHERE subRoomId = ? AND timestamp = ?;",
+				System.Data.DbType.Int64, System.Data.DbType.Int64);
+			selectRoomsCommand = AddCommand(dbConnection, "SELECT DISTINCT subRoomId FROM autosaves;");
+			selectRoomsAndNamesCommand = AddCommand(dbConnection, "SELECT subRoomId, name FROM (SELECT DISTINCT subRoomId FROM autosaves) as sids LEFT OUTER JOIN roomNames USING(subRoomId);");
+			insertNameCommand = AddCommand(dbConnection, "INSERT OR REPLACE INTO roomNames(subRoomId, name) VALUES (?, ?);",
+				System.Data.DbType.Int64, System.Data.DbType.String);
+			updateCommentCommand = AddCommand(dbConnection, "UPDATE autosaves SET comment = ? WHERE subRoomId = ? AND timestamp = ?;",
+				System.Data.DbType.String, System.Data.DbType.Int64, System.Data.DbType.Int64);
+			setSettingCommand = AddCommand(dbConnection, "INSERT OR REPLACE INTO settings(name, intValue) VALUES (?, ?);",
+				System.Data.DbType.String, System.Data.DbType.Int64);
 
 			using (SQLiteCommand command = new SQLiteCommand("SELECT name, intValue FROM settings;", dbConnection))
 			using (SQLiteDataReader reader = command.ExecuteReader())
@@ -106,9 +113,12 @@
 			dbConnection = null;
 		}
 
-		private SQLiteCommand AddCommand(string commandText, SQLiteConnection connection)
+		private SQLiteCommand AddCommand(SQLiteConnection connection, string commandText, params System.Data.DbType[] parameterTypes)
 		{
 			SQLiteCommand command = new SQLiteCommand(commandText, connection);
+			command.Parameters.Clear();
+			foreach (System.Data.DbType parameterType in parameterTypes)
+				command.Parameters.Add(new SQLiteParameter(parameterType));
 			commands.Add(command);
 			return command;
 		}
@@ -148,29 +158,26 @@
 
 		private void SetSetting(SettingKey key, object value)
 		{
-			setSettingCommand.Parameters.Clear();
-			setSettingCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.String, (object)key.ToString()));
-			setSettingCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)value));
+			setSettingCommand.Parameters[0].Value = key.ToString();
+			setSettingCommand.Parameters[1].Value = value;
 			setSettingCommand.ExecuteNonQuery();
 			settings[key] = value;
 		}
 
 		public void StoreSnapshot(long subRoomId, DateTime timestamp, string comment, byte[] blob, long autosaveFormatVersion)
 		{
-			insertCommand.Parameters.Clear();
-			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
-			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)timestamp.Ticks));
-			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.String, (object)comment));
-			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Binary, (object)blob));
-			insertCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)autosaveFormatVersion));
+			insertCommand.Parameters[0].Value = subRoomId;
+			insertCommand.Parameters[1].Value = timestamp.Ticks;
+			insertCommand.Parameters[2].Value = comment;
+			insertCommand.Parameters[3].Value = blob;
+			insertCommand.Parameters[4].Value = autosaveFormatVersion;
 			insertCommand.ExecuteNonQuery();
 			SnapshotStored(this, new StoreEventArgs { subRoomId = subRoomId, timestamp = timestamp, comment = comment });
 		}
 
 		public ArraySegment<byte> FetchLatestSnapshotContentBytes(long subRoomId, out DateTime timestamp, out long autosaveFormatVersion)
 		{
-			selectLatestCommand.Parameters.Clear();
-			selectLatestCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
+			selectLatestCommand.Parameters[0].Value = subRoomId;
 			using (SQLiteDataReader reader = selectLatestCommand.ExecuteReader())
 			{
 				if (reader.Read())
@@ -187,9 +194,8 @@
 
 		public byte[] FetchSnapshot(long subRoomId, DateTime timestamp, out long autosaveFormatVersion)
 		{
-			selectSpecivicBlobCommand.Parameters.Clear();
-			selectSpecivicBlobCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
-			selectSpecivicBlobCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)timestamp.Ticks));
+			selectSpecivicBlobCommand.Parameters[0].Value = subRoomId;
+			selectSpecivicBlobCommand.Parameters[1].Value = timestamp.Ticks;
 			using (SQLiteDataReader reader = selectSpecivicBlobCommand.ExecuteReader())
 			{
 				if (reader.Read())
@@ -204,13 +210,10 @@
 
 		public IEnumerable<SavePointData> FetchTimestamps(long subRoomId)
 		{
-			selectTimestamps.Parameters.Clear();
-			selectTimestamps.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
-			using (SQLiteDataReader reader = selectTimestamps.ExecuteReader())
-			{
-				while (reader.Read())
-					yield return new SavePointData { timestamp = new DateTime(reader.GetInt64(0)), comment = reader[1] as string };
-			}
+			selectTimestamps.Parameters[0].Value = subRoomId;
+			using SQLiteDataReader reader = selectTimestamps.ExecuteReader();
+			while (reader.Read())
+				yield return new SavePointData { timestamp = new DateTime(reader.GetInt64(0)), comment = reader[1] as string };
 		}
 
 		public IEnumerable<long> FetchSubRoomIds()
@@ -230,28 +233,24 @@
 
 		public IEnumerable<RoomAndName> FetchSubRoomIdsWithNames()
 		{
-			using (SQLiteDataReader reader = selectRoomsAndNamesCommand.ExecuteReader())
-			{
-				while (reader.Read())
-					yield return new RoomAndName { subRoomId = reader.GetInt64(0), subRoomName = reader[1] as string };
-			}
+			using SQLiteDataReader reader = selectRoomsAndNamesCommand.ExecuteReader();
+			while (reader.Read())
+				yield return new RoomAndName { subRoomId = reader.GetInt64(0), subRoomName = reader[1] as string };
 		}
 
 		public void StoreSubRoomName(long subRoomId, string subRoomName)
 		{
-			insertNameCommand.Parameters.Clear();
-			insertNameCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object)subRoomId));
-			insertNameCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.String, (object)subRoomName));
+			insertNameCommand.Parameters[0].Value = subRoomId;
+			insertNameCommand.Parameters[1].Value = subRoomName;
 			insertNameCommand.ExecuteNonQuery();
 			//SubRoomNameChanged(this, new StoreEventArgs { subRoomId = subRoomId, subRoomName = subRoomName });
 		}
 
 		public void StoreSnapshotComment(long subRoomId, DateTime timestamp, string comment)
 		{
-			updateCommentCommand.Parameters.Clear();
-			updateCommentCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.String, (object) comment));
-			updateCommentCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object) subRoomId));
-			updateCommentCommand.Parameters.Add(new SQLiteParameter(System.Data.DbType.Int64, (object) timestamp.Ticks));
+			updateCommentCommand.Parameters[0].Value = comment;
+			updateCommentCommand.Parameters[1].Value = subRoomId;
+			updateCommentCommand.Parameters[2].Value = timestamp.Ticks;
 			updateCommentCommand.ExecuteNonQuery();
 			//SnapshotCommentChanged(this, new StoreEventArgs { subRoomId = subRoomId, timestamp = timestamp, comment = comment });
 		}
