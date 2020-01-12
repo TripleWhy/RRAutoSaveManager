@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -8,49 +8,35 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="protobuf\*.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.11.2" />
-    <PackageReference Include="Google.Protobuf.Tools" Version="3.11.2" />
+    <PackageReference Include="Grpc.Tools" Version="2.26.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Qml.Net" Version="0.10.1" />
     <PackageReference Include="Qml.Net.WindowsBinaries" Version="0.10.1" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.112" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="qml\main.qml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="qml\MainWindowContent.qml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="qml\MainWindowContentForm.ui.qml">
+    <Protobuf Include="protobuf\AutoSave.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="qml\*.qml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="qml\qtquickcontrols2.conf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="qml\RestoreToDialog.qml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="qml\RestoreToDialogForm.ui.qml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="qml\RoomView.qml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="qml\RoomView.ui.qml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="qml\RoomViewForm.ui.qml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
-
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="$(userprofile)\.nuget\packages\google.protobuf.tools\3.11.2\tools\windows_x64\protoc -I=&quot;$(userprofile)\.nuget\packages\google.protobuf.tools\3.11.2\tools&quot; -I=&quot;$(ProjectDir)\protobuf&quot; --csharp_out=&quot;$(ProjectDir)\protobuf\generated&quot; &quot;AutoSave.proto&quot;" />
-  </Target>
 
 </Project>

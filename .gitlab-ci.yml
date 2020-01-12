@@ -8,11 +8,21 @@ binary:
   stage: build
   only:
     - tags
+    - ci
   script:
     - dotnet publish -c Release
+    - ls -alR
+    - pwd
+    - ls .
+    - ls ./QtRuntimeDownloader
+    - ls ./QtRuntimeDownloader/bin
+    - ls ./QtRuntimeDownloader/bin/Release
+    - ls ./QtRuntimeDownloader/bin/Release/netcoreapp3.1
+    - ls ./QtRuntimeDownloader/bin/Release/netcoreapp3.1/QtRuntimeDownloader.exe
+    - ./QtRuntimeDownloader/bin/Release/netcoreapp3.1/QtRuntimeDownloader.exe
     - popd
     - mv AutoSaveManager AutoSaveManager_src
-    - mv AutoSaveManager_src/AutoSaveManager/bin/Release/netcoreapp2.1/publish ./AutoSaveManager
+    - mv AutoSaveManager_src/AutoSaveManager/bin/Release/netcoreapp3.1/publish ./AutoSaveManager
   artifacts:
     # name: "AutoSaveManager${CI_COMMIT_TAG}_frameworkDependentDeployment"
     name: "AutoSaveManager${CI_COMMIT_TAG}"
