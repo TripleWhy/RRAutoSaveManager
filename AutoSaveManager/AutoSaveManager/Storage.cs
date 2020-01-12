@@ -26,8 +26,8 @@
 		private readonly SQLiteCommand insertNameCommand;
 		private readonly SQLiteCommand updateCommentCommand;
 		private readonly SQLiteCommand setSettingCommand;
-
 		private readonly List<SQLiteCommand> commands = new List<SQLiteCommand>();
+		private readonly string createTablesSql;
 
 		public Storage(string dbFile)
 		{
@@ -35,9 +35,9 @@
 			dbConnection = new SQLiteConnection(string.Format("Data Source={0};Version=3;", dbFile));
 			dbConnection.Open();
 
-			string createSql =
+			createTablesSql =
 				"CREATE TABLE IF NOT EXISTS settings(" +
-				"name TEXT, " +
+				"name TEXT PRIMARY KEY, " +
 				"intValue INTEGER); " +
 				"" +
 				"CREATE TABLE IF NOT EXISTS autosaves(" +
@@ -51,11 +51,10 @@
 				"" +
 				"CREATE TABLE IF NOT EXISTS roomNames(" +
 				"subRoomId INTEGER PRIMARY KEY, " +
-				"name TEXT, " +
-				"FOREIGN KEY(subRoomId) REFERENCES autosaves(subRoomId)) " +
+				"name TEXT) " +
 				"WITHOUT ROWID;";
-			SQLiteCommand command = new SQLiteCommand(createSql, dbConnection);
-			command.ExecuteNonQuery();
+			using (SQLiteCommand command = new SQLiteCommand(createTablesSql, dbConnection))
+				command.ExecuteNonQuery();
 
 			insertCommand = AddCommand("INSERT OR IGNORE INTO autosaves(subRoomId, timestamp, comment, data, autosaveFormatVersion) values (?, ?, ?, ?, ?);", dbConnection);
 			selectLatestCommand = AddCommand("SELECT timestamp, data, autosaveFormatVersion FROM autosaves WHERE subRoomId = ? ORDER BY timestamp DESC LIMIT 1;", dbConnection);
@@ -67,7 +66,7 @@
 			updateCommentCommand = AddCommand("UPDATE autosaves SET comment = ? WHERE subRoomId = ? AND timestamp = ?;", dbConnection);
 			setSettingCommand = AddCommand("INSERT OR REPLACE INTO settings(name, intValue) VALUES (?, ?);", dbConnection);
 
-			command = new SQLiteCommand("SELECT name, intValue FROM settings;", dbConnection);
+			using (SQLiteCommand command = new SQLiteCommand("SELECT name, intValue FROM settings;", dbConnection))
 			using (SQLiteDataReader reader = command.ExecuteReader())
 			{
 				while (reader.Read())
@@ -101,6 +100,8 @@
 				return;
 			foreach (SQLiteCommand command in commands)
 				command.Dispose();
+			using (SQLiteCommand command = new SQLiteCommand("VACUUM;", dbConnection))
+				command.ExecuteNonQuery();
 			dbConnection.Dispose();
 			dbConnection = null;
 		}
@@ -126,13 +127,23 @@
 
 		private void UpgradeDbFrom0To1()
 		{
+			using SQLiteTransaction transaction = dbConnection.BeginTransaction();
 			string sql =
 				"ALTER TABLE autosaves " +
 				"ADD COLUMN autosaveFormatVersion INTEGER; " +
-				"UPDATE autosaves SET autosaveFormatVersion = 1;";
-			SQLiteCommand command = new SQLiteCommand(sql, dbConnection);
-			command.ExecuteNonQuery();
+				"UPDATE autosaves SET autosaveFormatVersion = 1; " +
+				"ALTER TABLE roomNames RENAME TO roomNamesOld; ";
+			using (SQLiteCommand command = new SQLiteCommand(sql, dbConnection))
+				command.ExecuteNonQuery();
+			using (SQLiteCommand command = new SQLiteCommand(createTablesSql, dbConnection))
+				command.ExecuteNonQuery();
+			sql = "INSERT INTO roomNames (subRoomId, name) " +
+				"SELECT subRoomId, name FROM roomNamesOld; " +
+				"DROP TABLE roomNamesOld;";
+			using (SQLiteCommand command = new SQLiteCommand(sql, dbConnection))
+				command.ExecuteNonQuery();
 			SetSetting(SettingKey.DbFormatVersion, 1);
+			transaction.Commit();
 		}
 
 		private void SetSetting(SettingKey key, object value)
