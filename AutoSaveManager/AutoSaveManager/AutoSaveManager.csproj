@@ -5,11 +5,8 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <ApplicationIcon />
     <StartupObject>AutoSaveManager.Program</StartupObject>
+    <AssemblyName>RRAutoSaveManager</AssemblyName>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="protobuf\*.proto" />
-  </ItemGroup>
 
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
@@ -27,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="protobuf\AutoSave.proto" />
+    <Protobuf Include="protobuf\*.proto" GrpcServices="None" Access="Internal" />
   </ItemGroup>
 
   <ItemGroup>
