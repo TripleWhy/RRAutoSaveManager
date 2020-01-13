@@ -10,8 +10,8 @@
 	{
 		static int Main(string[] args)
 		{
-			string thisName = Assembly.GetExecutingAssembly().GetName().Name;
-			string asmName = "AutoSaveManager";
+			if (args.Length < 1)
+				return 1;
 
 			RuntimeTarget target = RuntimeTarget.Windows64;
 			MethodInfo runtimeTargetToString = typeof(RuntimeManager).GetMethod("RuntimeTargetToString", BindingFlags.Static | BindingFlags.NonPublic);
@@ -19,15 +19,18 @@
 			string qtVersion = QmlNetConfig.QtBuildVersion;
 			string qtVersionString = $"{qtVersion}-{targetString}";
 
-			string dstPath = RuntimeManager.GetPotentialRuntimesDirectories(RuntimeManager.RuntimeSearchLocation.ExecutableDirectory)[0];
-			dstPath = dstPath.Replace(thisName, asmName);
+			//string thisName = Assembly.GetExecutingAssembly().GetName().Name;
+			//string asmName = "AutoSaveManager";
+			//string dstPath = RuntimeManager.GetPotentialRuntimesDirectories(RuntimeManager.RuntimeSearchLocation.ExecutableDirectory)[0];
+			//dstPath = dstPath.Replace(thisName, asmName);
+			string dstPath = Path.GetFullPath(args[0]);
 			dstPath = Path.Combine(dstPath, qtVersionString);
 
 			Console.WriteLine($"Downloading Qt to {dstPath}...");
 			Directory.CreateDirectory(dstPath);
 			RuntimeManager.DownloadRuntimeToDirectory(qtVersion, target, dstPath);
 			Directory.Exists(dstPath);
-			return File.Exists(Path.Combine(dstPath, "version.txt")) ? 0 : 1;
+			return File.Exists(Path.Combine(dstPath, "version.txt")) ? 0 : 2;
 		}
 	}
 }
