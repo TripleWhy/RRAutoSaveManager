@@ -1,5 +1,5 @@
 ﻿syntax = "proto3";
-package AutoSaveManager;
+package AutoSaveManager.protobuf;
 
 import "google/protobuf/timestamp.proto";
 
