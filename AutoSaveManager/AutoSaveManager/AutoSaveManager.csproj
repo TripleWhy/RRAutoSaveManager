@@ -5,6 +5,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <ApplicationIcon />
     <StartupObject>AutoSaveManager.Program</StartupObject>
+    <AssemblyName>RRAutoSaveManager</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
