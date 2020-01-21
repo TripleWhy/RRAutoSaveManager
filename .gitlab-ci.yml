@@ -1,23 +1,28 @@
-image: mcr.microsoft.com/dotnet/core/sdk:3.0
+image: mcr.microsoft.com/dotnet/core/sdk:3.1
 
 before_script:
   - pwd
-  - pushd AutoSaveManager
+  - pushd AutoSaveManager/AutoSaveManager
 
 binary:
   stage: build
   only:
     - tags
+    - ci
   script:
-    - dotnet publish -c Release
+    - dotnet publish -c Release -r win-x64 --self-contained true -o ../../RRAutoSaveManager
+    - ls -alR
+    - pwd
     - popd
-    - mv AutoSaveManager AutoSaveManager_src
-    - mv AutoSaveManager_src/AutoSaveManager/bin/Release/netcoreapp2.1/publish ./AutoSaveManager
+    - ls -alR
+    - pwd
+    - dotnet run --project AutoSaveManager/QtRuntimeDownloader ./RRAutoSaveManager
+    - ls -alR
   artifacts:
     # name: "AutoSaveManager${CI_COMMIT_TAG}_frameworkDependentDeployment"
     name: "AutoSaveManager${CI_COMMIT_TAG}"
     paths:
-      - AutoSaveManager
+      - RRAutoSaveManager
 
 # fde86:
 #   stage: build
