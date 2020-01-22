@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <ApplicationIcon />
+    <ApplicationIcon>rrasm-icon.ico</ApplicationIcon>
     <StartupObject>AutoSaveManager.Program</StartupObject>
     <AssemblyName>RRAutoSaveManager</AssemblyName>
   </PropertyGroup>
