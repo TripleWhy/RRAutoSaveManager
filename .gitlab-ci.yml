@@ -1,15 +1,13 @@
 image: mcr.microsoft.com/dotnet/core/sdk:3.1
 
-before_script:
-  - pwd
-  - pushd AutoSaveManager/AutoSaveManager
-
 binary:
   stage: build
   only:
     - tags
     - ci
   script:
+    - pwd
+    - pushd AutoSaveManager/AutoSaveManager
     - dotnet publish -c Release -r win-x64 --self-contained true -o ../../RRAutoSaveManager
     - ls -alR
     - pwd
@@ -19,70 +17,6 @@ binary:
     - dotnet run --project AutoSaveManager/QtRuntimeDownloader ./RRAutoSaveManager
     - ls -alR
   artifacts:
-    # name: "AutoSaveManager${CI_COMMIT_TAG}_frameworkDependentDeployment"
-    name: "AutoSaveManager${CI_COMMIT_TAG}"
+    name: "RRAutoSaveManager${CI_COMMIT_TAG}"
     paths:
       - RRAutoSaveManager
-
-# fde86:
-#   stage: build
-#   only:
-#     - tags
-#   script:
-#     - dotnet publish -c Release -r win7-x86 --self-contained false
-#     - popd
-#     - mv AutoSaveManager AutoSaveManager_src
-#     - mv AutoSaveManager_src/AutoSaveManager/bin/Release/netcoreapp2.1/win7-x86/publish ./AutoSaveManager
-#   artifacts:
-#     name: "AutoSaveManager${CI_COMMIT_TAG}_x86_frameworkDependentExecutable"
-#     paths:
-#       - AutoSaveManager
-
-# fde64:
-#   stage: build
-#   only:
-#     - tags
-#   script:
-#     - dotnet publish -c Release -r win7-x64 --self-contained false
-#     - popd
-#     - mv AutoSaveManager AutoSaveManager_src
-#     - mv AutoSaveManager_src/AutoSaveManager/bin/Release/netcoreapp2.1/win7-x64/publish ./AutoSaveManager
-#   artifacts:
-#     name: "AutoSaveManager${CI_COMMIT_TAG}_x64_frameworkDependentExecutable"
-#     paths:
-#       - AutoSaveManager/qml
-#       - AutoSaveManager/runtimes/win-x64
-#       - AutoSaveManager/AutoSaveManager.*
-#       - AutoSaveManager/NetNativeLibLoader.dll
-#       - AutoSaveManager/Newtonsoft.Json.dll
-#       - AutoSaveManager/Qml.Net.dll
-#       - AutoSaveManager/SQLite.Interop.dll
-#       - AutoSaveManager/System.Data.SQLite.dll
-
-# scd86:
-#   stage: build
-#   only:
-#     - tags
-#   script:
-#     - dotnet publish -c Release -r win7-x86 --self-contained true
-#     - popd
-#     - mv AutoSaveManager AutoSaveManager_src
-#     - mv AutoSaveManager_src/AutoSaveManager/bin/Release/netcoreapp2.1/win7-x86/publish ./AutoSaveManager
-#   artifacts:
-#     name: "AutoSaveManager${CI_COMMIT_TAG}_x86_selfContained"
-#     paths:
-#       - AutoSaveManager
-
-# scd64:
-#   stage: build
-#   only:
-#     - tags
-#   script:
-#     - dotnet publish -c Release -r win7-x64 --self-contained true
-#     - popd
-#     - mv AutoSaveManager AutoSaveManager_src
-#     - mv AutoSaveManager_src/AutoSaveManager/bin/Release/netcoreapp2.1/win7-x64/publish ./AutoSaveManager
-#   artifacts:
-#     name: "AutoSaveManager${CI_COMMIT_TAG}_x64_selfContained"
-#     paths:
-#       - AutoSaveManager
