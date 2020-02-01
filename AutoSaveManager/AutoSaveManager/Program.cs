@@ -14,7 +14,7 @@
 			using QQmlApplicationEngine engine = new QQmlApplicationEngine();
 			// Register our new type to be used in Qml
 			QmlBridge.RegisterTypes();
-			engine.Load("qml/main.qml");
+			engine.Load(System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "qml", "main.qml"));
 			return app.Exec();
 		}
 	}
