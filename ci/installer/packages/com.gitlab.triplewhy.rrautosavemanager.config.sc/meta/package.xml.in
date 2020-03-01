@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<Package>
+	<DisplayName>RRAutosaveManager SC config files</DisplayName>
+	<Description></Description>
+	<Version>@VERSION@</Version>
+	<ReleaseDate>@RELEASEDATE@</ReleaseDate>
+	<AutoDependOn>com.gitlab.triplewhy.rrautosavemanager.dotnet</AutoDependOn>
+	<Virtual>true</Virtual>
+	<Essential>false</Essential>
+	<ForcedInstallation>false</ForcedInstallation>
+	<RequiresAdminRights>false</RequiresAdminRights>
+</Package>

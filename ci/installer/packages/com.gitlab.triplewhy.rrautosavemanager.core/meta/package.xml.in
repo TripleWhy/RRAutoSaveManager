@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<Package>
+	<DisplayName>RRAutosaveManager</DisplayName>
+	<Description>Autosave Manager application</Description>
+	<Version>@VERSION@</Version>
+	<ReleaseDate>@RELEASEDATE@</ReleaseDate>
+	<Dependencies>com.microsoft.vcredist.x64</Dependencies>
+	<SortingPriority>100</SortingPriority>
+	<Licenses>
+		<License name="RRAutosaveManager License" file="license-asm" />
+		<License name="Third party license: Qml.Net" file="license-qmlnet" />
+		<License name="Third party license: Qt" file="license-qt" />
+		<License name="Third party license: Protobuf" file="license-protobuf" />
+	</Licenses>
+	<Essential>false</Essential>
+	<ForcedInstallation>true</ForcedInstallation>
+	<RequiresAdminRights>false</RequiresAdminRights>
+	<Script>installscript.qs</Script>
+</Package>

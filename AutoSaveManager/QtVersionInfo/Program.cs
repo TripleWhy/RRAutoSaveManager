@@ -10,23 +10,16 @@
 	{
 		static int Main(string[] args)
 		{
-			if (args.Length < 1)
-				return 1;
+			File.WriteAllText("dotnetversion.txt", System.Environment.Version.ToString());
 
 			RuntimeTarget target = RuntimeTarget.Windows64;
 			MethodInfo runtimeTargetToString = typeof(RuntimeManager).GetMethod("RuntimeTargetToString", BindingFlags.Static | BindingFlags.NonPublic);
 			string targetString = (string)runtimeTargetToString.Invoke(null, new object[] { target });
 			string qtVersion = QmlNetConfig.QtBuildVersion;
 			string qtVersionString = $"{qtVersion}-{targetString}";
+			File.WriteAllText("qtversion.txt", qtVersionString);
 
-			string dstPath = Path.GetFullPath(args[0]);
-			dstPath = Path.Combine(dstPath, qtVersionString);
-
-			Console.WriteLine($"Downloading Qt to {dstPath}...");
-			Directory.CreateDirectory(dstPath);
-			RuntimeManager.DownloadRuntimeToDirectory(qtVersion, target, dstPath);
-			Directory.Exists(dstPath);
-			return File.Exists(Path.Combine(dstPath, "version.txt")) ? 0 : 2;
+			return 0;
 		}
 	}
 }

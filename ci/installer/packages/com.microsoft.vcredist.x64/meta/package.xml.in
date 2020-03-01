@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+	<DisplayName>Microsoft Visual C++ Redistributable</DisplayName>
+	<Description>Installs the Visual C++ redistributables</Description>
+	<Version>@VCVERSION@</Version>
+	<ReleaseDate>@VCDATE@</ReleaseDate>
+	<Script>install.js</Script>
+	<Virtual>true</Virtual>
+</Package>

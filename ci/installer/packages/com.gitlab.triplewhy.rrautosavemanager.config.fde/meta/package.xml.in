@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<Package>
+	<DisplayName>RRAutosaveManager FDE config files</DisplayName>
+	<Description></Description>
+	<Version>@VERSION@</Version>
+	<ReleaseDate>@RELEASEDATE@</ReleaseDate>
+	<AutoDependOn></AutoDependOn>
+	<Virtual>true</Virtual>
+	<Essential>false</Essential>
+	<ForcedInstallation>false</ForcedInstallation>
+	<RequiresAdminRights>false</RequiresAdminRights>
+</Package>

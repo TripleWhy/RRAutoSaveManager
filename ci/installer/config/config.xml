@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+	<Name>Rec Room Autosave Manager</Name>
+	<Version>0.2.0</Version>
+	<Title>RRAutosaveManager</Title>
+	<Publisher>TripleWhy</Publisher>
+	<ProductUrl>https://gitlab.com/triplewhy/rrautosavemanager</ProductUrl>
+	<!--<InstallerApplicationIcon>../../AutoSaveManager/AutoSaveManager/img/rrasm-icon.ico</InstallerApplicationIcon>-->
+	<!--<InstallerWindowIcon>../../AutoSaveManager/AutoSaveManager/img/rrasm-icon_64.png</InstallerWindowIcon>-->
+	<Logo>../../AutoSaveManager/AutoSaveManager/img/rrasm-icon_32.png</Logo>
+	<!--<RunProgram>@TargetDir@/RRAutosaveManager</RunProgram> messes up the style on first launch for some reason -->
+	<StartMenuDir>RRAutosaveManager</StartMenuDir>
+	<TargetDir>@ApplicationsDirX64@/RRAutosaveManager</TargetDir>
+	<RemoteRepositories>
+		<Repository>
+			<Url>https://triplewhy.gitlab.io/rrautosavemanager/packages</Url>
+			<Enabled>1</Enabled>
+			<DisplayName>RRAutosaveManager repository</DisplayName>
+		</Repository>
+	</RemoteRepositories>
+	<MaintenanceToolName>Updater</MaintenanceToolName>
+	<MaintenanceToolIniFile>Updater.ini</MaintenanceToolIniFile>
+	<RemoveTargetDir>true</RemoveTargetDir>
+	<AllowNonAsciiCharacters>true</AllowNonAsciiCharacters>
+	<RepositorySettingsPageVisible>false</RepositorySettingsPageVisible>
+	<AllowSpaceInPath>true</AllowSpaceInPath>
+	<DependsOnLocalInstallerBinary>true</DependsOnLocalInstallerBinary>
+	<InstallActionColumnVisible>true</InstallActionColumnVisible>
+</Installer>

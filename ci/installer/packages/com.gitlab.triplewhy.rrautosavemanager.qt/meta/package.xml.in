@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<Package>
+	<DisplayName>Qt depencencies</DisplayName>
+	<Description>
+	Qt dependencies required by qml.net.
+	&lt;p&gt;
+	If you don't install this, qml.net will search Qt in a location shared with other qml.net apps. If Qt doesn't exist in that location yet, starting RRAutosaveManager for the first time will take some time to download Qt.</Description>
+	<Version>@QTVERSION@</Version>
+	<ReleaseDate>@QTDATE@</ReleaseDate>
+	<SortingPriority>2</SortingPriority>
+	<Default>true</Default>
+	<Essential>false</Essential>
+	<ForcedInstallation>false</ForcedInstallation>
+	<RequiresAdminRights>false</RequiresAdminRights>
+	<ExpandedByDefault>false</ExpandedByDefault>
+</Package>

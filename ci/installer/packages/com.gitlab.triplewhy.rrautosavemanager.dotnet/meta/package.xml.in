@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<Package>
+	<DisplayName>.NET Core</DisplayName>
+	<Description>Install self contained .NET core runtime. Required if you don't have a system-wide .NET core installation.</Description>
+	<Version>@DOTNETVERSION@</Version>
+	<ReleaseDate>@DOTNETDATE@</ReleaseDate>
+	<SortingPriority>1</SortingPriority>
+	<Licenses>
+		<License name="Third party license: .net core" file="license-dotnet" />
+	</Licenses>
+	<Default>true</Default>
+	<Essential>false</Essential>
+	<ForcedInstallation>false</ForcedInstallation>
+	<RequiresAdminRights>false</RequiresAdminRights>
+	<ExpandedByDefault>false</ExpandedByDefault>
+	<Script>installscript.qs</Script>
+</Package>
